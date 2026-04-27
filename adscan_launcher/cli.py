@@ -22,6 +22,7 @@ import platform
 import re
 from io import StringIO
 import os
+import shutil
 import subprocess
 import sys
 import uuid
@@ -588,7 +589,11 @@ def _guard_supported_host_platform(
     host_arch = str(platform.machine() or "").strip() or "unknown"
     normalized_arch = host_arch.lower()
 
-    if host_platform.lower() != "linux":
+    # Allow macOS with Docker Desktop
+    is_darwin = host_platform.lower() == "darwin"
+    has_docker = shutil.which("docker") is not None
+
+    if host_platform.lower() != "linux" and not (is_darwin and has_docker):
         if _allow_unsupported_platform_override():
             print_warning(
                 "Proceeding on an unsupported host platform because "
@@ -613,12 +618,17 @@ def _guard_supported_host_platform(
             return
 
         print_error(
-            "ADscan launcher Docker mode is currently supported on Linux hosts only."
+            "ADscan launcher Docker mode is currently supported on Linux and macOS (with Docker Desktop) hosts only."
         )
         print_instruction(f"Detected platform: {host_platform}")
-        print_instruction(
-            "Use a supported Linux host (recommended: Kali, Ubuntu, Debian, or Parrot) and retry."
-        )
+        if is_darwin and not has_docker:
+            print_instruction(
+                "Docker not found. Install Docker Desktop for Mac and retry."
+            )
+        else:
+            print_instruction(
+                "Use a supported Linux host (recommended: Kali, Ubuntu, Debian, or Parrot) or macOS with Docker Desktop and retry."
+            )
         print_instruction(
             "System requirements: https://www.adscanpro.com/docs/getting-started/system-requirements"
         )
@@ -639,6 +649,25 @@ def _guard_supported_host_platform(
             },
         )
         raise SystemExit(2)
+
+    if is_darwin and has_docker:
+        print_info(
+            "Running on macOS with Docker Desktop. ADscan will use Docker's Linux VM."
+        )
+        print_info_debug(
+            "[platform] macOS detected with Docker available; allowing Docker mode"
+        )
+        capture(
+            "launcher_platform_guard",
+            {
+                "blocked": False,
+                "override": False,
+                "platform": host_platform,
+                "architecture": host_arch,
+                "reason": "macos_with_docker",
+                "command": command or "passthrough",
+            },
+        )
 
     if _is_windows_subsystem_for_linux():
         if _allow_unsupported_wsl_override():
@@ -718,13 +747,13 @@ def _guard_supported_host_platform(
         )
         return
 
-    print_error(
-        "ADscan launcher Docker mode currently supports x86_64/amd64/arm64 Linux hosts only."
-    )
-    print_instruction(f"Detected architecture: {host_arch}")
-    print_instruction(
-        "Use a supported Linux host (x86_64 or arm64), or rebuild/run the container stack with compatible images."
-    )
+        print_error(
+            "ADscan launcher Docker mode currently supports x86_64/amd64/arm64 Linux and macOS hosts only."
+        )
+        print_instruction(f"Detected architecture: {host_arch}")
+        print_instruction(
+            "Use a supported Linux host (x86_64 or arm64), macOS with Docker Desktop, or rebuild/run the container stack with compatible images."
+        )
     print_instruction(
         "System requirements: https://www.adscanpro.com/docs/getting-started/system-requirements"
     )
