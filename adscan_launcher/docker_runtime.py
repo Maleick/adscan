@@ -45,6 +45,17 @@ _DOCKER_PULL_DNS_FAILURE_RE = re.compile(
 _DOCKER_PERMISSION_WARNING_SHOWN = False
 
 
+def _get_host_platform() -> str | None:
+    """Return the Docker platform string for the host architecture."""
+    import platform
+    arch = platform.machine().lower()
+    if arch in ("arm64", "aarch64"):
+        return "linux/arm64"
+    if arch in ("x86_64", "amd64"):
+        return "linux/amd64"
+    return None
+
+
 def _emit_pull_failure_dns_guidance(*, diagnostic: str) -> None:
     """Emit targeted guidance when docker pull fails due to DNS resolution."""
     if not _DOCKER_PULL_DNS_FAILURE_RE.search(diagnostic or ""):
@@ -518,9 +529,14 @@ def ensure_image_pulled(
     if not docker_available():
         return False
     # Pull is idempotent and simplest.
+    pull_cmd = ["docker", "pull"]
+    platform_flag = _get_host_platform()
+    if platform_flag:
+        pull_cmd.extend(["--platform", platform_flag])
+    pull_cmd.append(image)
     if stream_output:
         rc, stdout, stderr = run_docker_stream(
-            ["docker", "pull", image], timeout=timeout
+            pull_cmd, timeout=timeout
         )
         if rc == 0:
             return True
@@ -538,7 +554,7 @@ def ensure_image_pulled(
         return False
 
     proc = run_docker(
-        ["docker", "pull", image], check=False, capture_output=True, timeout=timeout
+        pull_cmd, check=False, capture_output=True, timeout=timeout
     )
     if proc.returncode == 0:
         return True
@@ -660,6 +676,9 @@ def build_adscan_run_command(
 ) -> list[str]:
     """Build docker run argv for running ADscan inside the container."""
     cmd: list[str] = ["docker", "run"]
+    platform_flag = _get_host_platform()
+    if platform_flag:
+        cmd.extend(["--platform", platform_flag])
     if cfg.remove:
         cmd.append("--rm")
     if cfg.interactive:
