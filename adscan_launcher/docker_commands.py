@@ -711,19 +711,48 @@ def _get_free_memory_bytes() -> int:
             timeout=5,
         )
         if result.returncode == 0:
-            # Parse vm_stat output to calculate free memory
-            # vm_stat shows pages, each page is typically 4096 bytes
-            page_size = 4096
+            # Parse vm_stat output to calculate available memory
+            # vm_stat shows page counts; page size is in header line
+            page_size = 4096  # default fallback
             free_pages = 0
+            inactive_pages = 0
+            speculative_pages = 0
+            
             for line in result.stdout.splitlines():
-                if "Pages free:" in line:
-                    # Format: "Pages free:                      12345."
-                    parts = line.split(":")
-                    if len(parts) == 2:
-                        free_pages = int(parts[1].strip().rstrip("."))
-                        break
-            if free_pages > 0:
-                return int(free_pages * page_size)
+                # Extract page size from header: "Mach Virtual Memory Statistics: (page size of 16384 bytes)"
+                if "page size of" in line:
+                    try:
+                        size_str = line.split("page size of")[1].split("bytes")[0].strip()
+                        page_size = int(size_str)
+                    except (ValueError, IndexError):
+                        pass
+                elif "Pages free:" in line:
+                    try:
+                        parts = line.split(":")
+                        if len(parts) == 2:
+                            free_pages = int(parts[1].strip().rstrip("."))
+                    except ValueError:
+                        pass
+                elif "Pages inactive:" in line:
+                    try:
+                        parts = line.split(":")
+                        if len(parts) == 2:
+                            inactive_pages = int(parts[1].strip().rstrip("."))
+                    except ValueError:
+                        pass
+                elif "Pages speculative:" in line:
+                    try:
+                        parts = line.split(":")
+                        if len(parts) == 2:
+                            speculative_pages = int(parts[1].strip().rstrip("."))
+                    except ValueError:
+                        pass
+            
+            # Available memory on macOS = free + inactive + speculative pages
+            # Inactive pages can be reclaimed by the system when needed
+            total_available_pages = free_pages + inactive_pages + speculative_pages
+            if total_available_pages > 0:
+                return int(total_available_pages * page_size)
     except (OSError, ValueError, subprocess.TimeoutExpired):
         pass
 
