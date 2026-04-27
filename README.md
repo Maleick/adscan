@@ -32,10 +32,35 @@ _Auto-pwns **HTB Forest** in ~3 minutes_
 
 ## 🚀 Quick Start
 
+ADscan runs inside Docker and supports both **x86_64 (amd64)** and **ARM64 (aarch64)** Linux hosts.
+
+### Prerequisites
+- Docker Engine with Docker Compose plugin
+- Python 3.9+ (for the launcher)
+
+### Installation
+
 ```bash
+# Install the launcher
 pipx install adscan
+
+# Pull the ADscan Docker image (includes all tools)
 adscan install
+
+# Start ADscan
 adscan start
+```
+
+### Building from Source
+
+```bash
+# Clone and build the Docker image
+git clone https://github.com/Maleick/adscan.git
+cd adscan
+docker build -f Dockerfile.runtime -t adscan:local .
+
+# Run locally built image
+adscan start --image adscan:local
 ```
 
 > **Full installation guide & docs** at [adscanpro.com/docs](https://adscanpro.com/docs?utm_source=github&utm_medium=readme&utm_campaign=install_cta)
