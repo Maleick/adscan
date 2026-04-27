@@ -220,3 +220,18 @@ def masked_status(config: AIConfig) -> dict[str, Any]:
         )
         or uses_codex_subscription,
     }
+
+
+__all__ = [
+    "AIProvider",
+    "CodexTransport",
+    "AIPrivacyMode",
+    "ExternalCliBackendConfig",
+    "AIAskConfig",
+    "AIConfig",
+    "get_ai_config_path",
+    "load_ai_config",
+    "save_ai_config",
+    "apply_model_environment",
+    "masked_status",
+]

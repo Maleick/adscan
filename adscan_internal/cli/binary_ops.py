@@ -312,8 +312,8 @@ def _patch_custom_binary_cache(src_path: str, filename: str) -> None:
 def _select_auth(shell: Any, domain: str, host: str) -> RemoteWindowsAuth | None:
     """Build RemoteWindowsAuth by selecting from stored credentials + ccache tickets."""
     domain_data = getattr(shell, "domains_data", {}).get(domain, {})
-    credentials: dict = domain_data.get("credentials", {})
-    kerberos_tickets: dict = domain_data.get("kerberos_tickets", {})
+    credentials: dict[str, str] = domain_data.get("credentials", {})
+    kerberos_tickets: dict[str, str] = domain_data.get("kerberos_tickets", {})
 
     options: list[tuple[str, str, str]] = []  # (label, username, secret)
 

@@ -1,29 +1,23 @@
 """Delegation enumeration mixin.
 
-This module encapsulates the logic required to enumerate Kerberos delegation
-relationships (unconstrained, constrained, resource-based) using external
-tools such as Impacket's ``findDelegation.py``.
-
-The goal is to move parsing and process execution out of ``adscan.py`` and
-provide a reusable service API that can be consumed by both the CLI and a
-future web backend.
+Enumerates Kerberos delegation relationships (unconstrained, constrained,
+resource-based) using external tools such as Impacket's ``findDelegation.py``.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional, Dict, Callable
+from typing import List, Optional, Dict
 import subprocess
 import logging
 import re
 
 from adscan_internal.core import AuthMode, requires_auth
 from adscan_internal.integrations.impacket.runner import run_raw_impacket_command
+from adscan_internal.types import CommandExecutor
 
 
 logger = logging.getLogger(__name__)
-
-CommandExecutor = Callable[[str, int], subprocess.CompletedProcess[str]]
 
 
 def _default_executor(command: str, timeout: int) -> subprocess.CompletedProcess[str]:

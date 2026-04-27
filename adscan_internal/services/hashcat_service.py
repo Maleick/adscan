@@ -1,12 +1,4 @@
-"""Hashcat cracking service.
-
-This module encapsulates small, reusable helpers for processing hashcat
-output, so that the monolithic CLI in ``adscan.py`` does not need to
-own all of the cracking logic directly.
-
-The goal is to progressively migrate hash-cracking responsibilities into
-service-layer components that can be tested in isolation.
-"""
+"""Hashcat cracking service."""
 
 from __future__ import annotations
 

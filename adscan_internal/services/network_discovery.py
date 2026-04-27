@@ -1,11 +1,4 @@
-"""Network discovery helpers for ADscan.
-
-This module centralises small, reusable pieces of network discovery logic that
-were previously embedded in the monolithic ``adscan.py`` shell implementation.
-
-The goal is to keep the heavy lifting here so CLI/interactive code can remain
-thin wrappers while still preserving legacy behaviour.
-"""
+"""Network discovery helpers for ADscan."""
 
 from __future__ import annotations
 

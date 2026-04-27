@@ -1,9 +1,4 @@
-"""Shared constants for internal tools.
-
-This module provides a minimal subset of constants that need to be reused
-outside of `adscan.py` (for example from CLI helpers) without importing
-the monolithic entrypoint and creating circular imports.
-"""
+"""Shared constants for internal tools."""
 
 from __future__ import annotations
 

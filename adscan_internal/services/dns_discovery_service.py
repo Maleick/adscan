@@ -1,15 +1,9 @@
 """DNS discovery service for ADscan.
 
-This module extracts the DNS discovery helpers from the monolithic `adscan.py`.
-It is intentionally focused on discovery primitives used across multiple flows:
-
+Provides discovery primitives:
 - SRV record discovery via direct DNS queries
 - IPv4 address resolution with layered resolver fallbacks
 - PDC discovery via a specific resolver with UDP→TCP fallback
-
-The service is CLI-friendly: it uses `adscan_internal.rich_output` for debug
-messages and centralizes DNS transport through dnspython instead of shelling out
-to external CLI resolvers.
 """
 
 from __future__ import annotations

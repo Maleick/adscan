@@ -1,8 +1,4 @@
-"""Base service class for all ADScan services.
-
-This module provides the foundation for service layer components,
-including event emission, logging, license management, and common utilities.
-"""
+"""Base service class for all ADScan services."""
 
 from typing import Optional
 import logging

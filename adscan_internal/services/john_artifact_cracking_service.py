@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable
 import os
 import re
 import shlex
@@ -13,9 +12,7 @@ import subprocess
 from adscan_internal import print_info_debug, print_warning, print_warning_debug
 from adscan_internal.rich_output import mark_sensitive
 from adscan_internal.services.base_service import BaseService
-
-
-CommandExecutor = Callable[..., subprocess.CompletedProcess[str] | None]
+from adscan_internal.types import FlexibleCommandExecutor as CommandExecutor
 
 
 @dataclass(frozen=True)

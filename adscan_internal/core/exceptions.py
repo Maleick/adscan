@@ -210,3 +210,15 @@ class ScanExecutionError(ADScanException):
         self.scan_id = scan_id
         self.phase = phase
         self.reason = reason
+
+
+__all__ = [
+    "ADScanException",
+    "LicenseError",
+    "AuthenticationError",
+    "ProtocolError",
+    "ToolNotFoundError",
+    "DomainNotFoundError",
+    "ConfigurationError",
+    "ScanExecutionError",
+]

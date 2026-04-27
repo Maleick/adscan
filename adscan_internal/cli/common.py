@@ -1,8 +1,4 @@
-"""Common CLI helpers for telemetry context, workspace selection, onboarding, and shared constants.
-
-This module provides shared functionality used across CLI commands to avoid
-circular dependencies and duplicate code.
-"""
+"""Common CLI helpers for telemetry context, workspace selection, onboarding, and shared constants."""
 
 from __future__ import annotations
 

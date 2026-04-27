@@ -1,8 +1,4 @@
-"""Host and Domain Controller models.
-
-This module defines models for representing hosts, Domain Controllers,
-and their associated information discovered during scans.
-"""
+"""Host and Domain Controller models."""
 
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Any
@@ -212,7 +208,7 @@ class DomainController(Host):
     site: Optional[str] = None
     roles: List[str] = field(default_factory=list)  # FSMO roles
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Ensure host_type is set to DOMAIN_CONTROLLER."""
         self.host_type = HostType.DOMAIN_CONTROLLER
         self.is_dc = True
@@ -341,3 +337,12 @@ class SMBShare:
             Formatted display name
         """
         return f"\\\\{self.host}\\{self.share_name}"
+
+
+__all__ = [
+    "HostType",
+    "HostOS",
+    "Host",
+    "DomainController",
+    "SMBShare",
+]

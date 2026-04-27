@@ -2704,7 +2704,7 @@ def execute_netexec_null(shell: Any, *, command: str, domain: str) -> None:
                 return parts[idx + 1]
         return None
 
-    def build_null_session_event_properties():
+    def build_null_session_event_properties() -> dict[str, Any]:
         return {
             "scan_mode": getattr(shell, "scan_mode", None),
             "auth_type": shell.domains_data.get(domain, {}).get("auth", "unknown"),

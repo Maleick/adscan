@@ -12,6 +12,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Callable, Iterable, cast
 
+from adscan_core.text_utils import normalize_account_name
+from adscan_core.time_utils import utc_now_iso
 from adscan_internal import telemetry
 from adscan_internal.reporting_compat import load_optional_report_service_attr
 from adscan_internal.rich_output import (
@@ -576,7 +578,7 @@ def infer_directory_object_enabled_state(
         if isinstance(samaccountname, str) and samaccountname.strip():
             principal_name = samaccountname
 
-    normalized_name = _normalize_account(str(principal_name or ""))
+    normalized_name = normalize_account_name(str(principal_name or ""))
     if not normalized_name:
         return None, "unknown"
 
@@ -663,7 +665,7 @@ def filter_enabled_domain_users(
         value = str(username or "").strip()
         if not value:
             continue
-        key = _normalize_account(value)
+        key = normalize_account_name(value)
         if not key or key in seen:
             continue
         seen.add(key)
@@ -678,7 +680,7 @@ def filter_enabled_domain_users(
     filtered = [
         username
         for username in normalized
-        if _normalize_account(username) in enabled_users
+        if normalize_account_name(username) in enabled_users
     ]
     return filtered, True
 
@@ -2961,10 +2963,6 @@ def _graph_has_persisted_memberships(graph: dict[str, Any]) -> bool:
     return False
 
 
-def _utc_now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
-
-
 def _normalize_relation(value: str) -> str:
     return (value or "").strip()
 
@@ -3884,7 +3882,7 @@ def _annotate_writelogonscript_prerequisite_status(
         return 0
 
     changed = 0
-    now = _utc_now_iso()
+    now = utc_now_iso()
     for edge in edges:
         if not isinstance(edge, dict):
             continue
@@ -6884,8 +6882,8 @@ def _inject_runtime_recursive_memberof_edges(
                     "edge_type": "runtime",
                     "status": "discovered",
                     "notes": {"edge": "runtime"},
-                    "first_seen": _utc_now_iso(),
-                    "last_seen": _utc_now_iso(),
+                    "first_seen": utc_now_iso(),
+                    "last_seen": utc_now_iso(),
                 }
             )
             existing.add(key)
@@ -7024,7 +7022,7 @@ def load_attack_graph(shell: object, domain: str) -> dict[str, Any]:
     return {
         "schema_version": ATTACK_GRAPH_SCHEMA_VERSION,
         "domain": domain,
-        "generated_at": _utc_now_iso(),
+        "generated_at": utc_now_iso(),
         "maintenance": {
             "normalization": _maintenance_key(_ATTACK_GRAPH_MAINTENANCE_VERSION),
             "bh_ce_synced": True,  # New graphs sync edges in real-time; no migration needed.
@@ -7108,7 +7106,7 @@ def _migrate_attack_graph(graph: dict[str, Any]) -> dict[str, Any] | None:
     migrated: dict[str, Any] = {
         "schema_version": ATTACK_GRAPH_SCHEMA_VERSION,
         "domain": graph.get("domain") or "",
-        "generated_at": _utc_now_iso(),
+        "generated_at": utc_now_iso(),
         "nodes": new_nodes,
         "edges": new_edges,
     }
@@ -7130,7 +7128,7 @@ def _refresh_attack_graph_edge_metadata(graph: dict[str, Any]) -> int:
         category, vuln_key = _classify_edge_relation(relation)
         if "discovered_at" not in edge:
             first_seen = edge.get("first_seen")
-            edge["discovered_at"] = first_seen or _utc_now_iso()
+            edge["discovered_at"] = first_seen or utc_now_iso()
             changed += 1
         if edge.get("category") != category or edge.get("vuln_key") != vuln_key:
             edge["category"] = category
@@ -7248,7 +7246,7 @@ def save_attack_graph(shell: object, domain: str, graph: dict[str, Any]) -> None
     """Persist the attack graph to disk with stable formatting."""
     graph["schema_version"] = ATTACK_GRAPH_SCHEMA_VERSION
     graph["domain"] = domain
-    graph["generated_at"] = _utc_now_iso()
+    graph["generated_at"] = utc_now_iso()
     path = _graph_path(shell, domain)
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
@@ -7344,7 +7342,7 @@ def refresh_attack_graph_execution_support(
         category, vuln_key = _classify_edge_relation(relation)
         if "discovered_at" not in edge:
             first_seen = edge.get("first_seen")
-            edge["discovered_at"] = first_seen or _utc_now_iso()
+            edge["discovered_at"] = first_seen or utc_now_iso()
             changed += 1
             metadata_updated += 1
         if edge.get("category") != category or edge.get("vuln_key") != vuln_key:
@@ -7445,7 +7443,7 @@ def reset_attack_graph_execution_statuses(shell: object, domain: str) -> dict[st
         category, vuln_key = _classify_edge_relation(relation)
         if "discovered_at" not in edge:
             first_seen = edge.get("first_seen")
-            edge["discovered_at"] = first_seen or _utc_now_iso()
+            edge["discovered_at"] = first_seen or utc_now_iso()
             changed += 1
             metadata_updated += 1
         if edge.get("category") != category or edge.get("vuln_key") != vuln_key:
@@ -7729,7 +7727,7 @@ def upsert_edge(
         edges = []
         graph["edges"] = edges
 
-    now = _utc_now_iso()
+    now = utc_now_iso()
     for edge in edges:
         if not isinstance(edge, dict):
             continue
@@ -8385,15 +8383,6 @@ def compute_maximal_attack_paths(
     return paths
 
 
-def _normalize_account(value: str) -> str:
-    name = strip_sensitive_markers(str(value or "")).strip()
-    if "\\" in name:
-        name = name.split("\\", 1)[1]
-    if "@" in name:
-        name = name.split("@", 1)[0]
-    return name.strip().lower()
-
-
 def _normalize_attack_path_filter_label(value: str) -> str:
     """Return a comparable canonical label for summary target/source matching."""
     raw = str(value or "").strip()
@@ -8481,7 +8470,7 @@ def paths_involving_user(
     The returned list contains dicts in the same shape used by the CLI tables,
     with an additional `role` field: source/target/intermediate.
     """
-    normalized = _normalize_account(username)
+    normalized = normalize_account_name(username)
     if not normalized:
         return []
 
@@ -8492,13 +8481,13 @@ def paths_involving_user(
         nodes = record.get("nodes") if isinstance(record.get("nodes"), list) else []
         role: str | None = None
         if nodes:
-            if _normalize_account(str(nodes[0])) == normalized:
+            if normalize_account_name(str(nodes[0])) == normalized:
                 role = "source"
-            elif _normalize_account(str(nodes[-1])) == normalized:
+            elif normalize_account_name(str(nodes[-1])) == normalized:
                 role = "target"
             else:
                 for node in nodes[1:-1]:
-                    if _normalize_account(str(node)) == normalized:
+                    if normalize_account_name(str(node)) == normalized:
                         role = "intermediate"
                         break
         if role:
@@ -8634,8 +8623,8 @@ def update_edge_status_by_labels(
         )
         return False
 
-    from_norm = _normalize_account(from_label)
-    to_norm = _normalize_account(to_label)
+    from_norm = normalize_account_name(from_label)
+    to_norm = normalize_account_name(to_label)
     if not from_norm or not to_norm:
         print_info_debug(
             "[attack-graph] Edge status update skipped: "
@@ -8650,7 +8639,7 @@ def update_edge_status_by_labels(
         if not isinstance(node, dict):
             return False
         node_label = str(node.get("label") or "")
-        return _normalize_account(node_label) == _normalize_account(label)
+        return normalize_account_name(node_label) == normalize_account_name(label)
 
     from_id = next((nid for nid in nodes_map.keys() if match(from_label, nid)), "")
     to_id = next((nid for nid in nodes_map.keys() if match(to_label, nid)), "")
@@ -9125,7 +9114,7 @@ def _resolve_bloodhound_principal_node(
     if not service:
         return None
 
-    normalized = _normalize_account(label_clean)
+    normalized = normalize_account_name(label_clean)
     lookup_name_clean = str(lookup_name or "").strip() or label_clean
     kind_hint = str(entry_kind or "").strip().lower()
 
@@ -10318,7 +10307,7 @@ def upsert_domain_password_reuse_edges(
             and str(username).strip()
             and not is_machine_account(str(username).strip())
         },
-        key=lambda item: _normalize_account(item),
+        key=lambda item: normalize_account_name(item),
     )
     normalized_targets = sorted(
         {
@@ -10328,13 +10317,13 @@ def upsert_domain_password_reuse_edges(
             and str(username).strip()
             and not is_machine_account(str(username).strip())
         },
-        key=lambda item: _normalize_account(item),
+        key=lambda item: normalize_account_name(item),
     )
     if not normalized_sources or not normalized_targets:
         return 0
 
-    participant_seed = {_normalize_account(user) for user in normalized_sources}
-    participant_seed.update(_normalize_account(user) for user in normalized_targets)
+    participant_seed = {normalize_account_name(user) for user in normalized_sources}
+    participant_seed.update(normalize_account_name(user) for user in normalized_targets)
     participant_seed.discard("")
     if len(participant_seed) < 2:
         return 0
@@ -10346,12 +10335,12 @@ def upsert_domain_password_reuse_edges(
             filtered_sources = [
                 username
                 for username in normalized_sources
-                if _normalize_account(username) in enabled_users
+                if normalize_account_name(username) in enabled_users
             ]
             filtered_targets = [
                 username
                 for username in normalized_targets
-                if _normalize_account(username) in enabled_users
+                if normalize_account_name(username) in enabled_users
             ]
         else:
             filtered_sources = list(normalized_sources)
@@ -10359,7 +10348,7 @@ def upsert_domain_password_reuse_edges(
         if not filtered_sources or not filtered_targets:
             return 0
         filtered_participants = {
-            _normalize_account(user) for user in filtered_sources + filtered_targets
+            normalize_account_name(user) for user in filtered_sources + filtered_targets
         }
         filtered_participants.discard("")
         if len(filtered_participants) < 2:
@@ -10677,7 +10666,7 @@ def ensure_user_node_for_domain(
         Node id for the ensured user node.
     """
     raw_username = str(username or "").strip()
-    user_clean = _normalize_account(raw_username) or raw_username
+    user_clean = normalize_account_name(raw_username) or raw_username
     if not user_clean:
         return ensure_user_node(graph, username=user_clean)
 
@@ -10757,7 +10746,7 @@ def _ensure_user_node_for_domain_synthetic(
 ) -> str:
     """Ensure a synthetic domain user node without querying external resolvers."""
     raw_username = str(username or "").strip()
-    user_clean = _normalize_account(raw_username) or raw_username
+    user_clean = normalize_account_name(raw_username) or raw_username
     if not user_clean:
         return ensure_user_node(graph, username=user_clean)
     canonical_domain = str(domain or "").strip().upper()
@@ -11160,7 +11149,7 @@ def update_roast_entry_edge_status(
         principal_kind=principal_kind,
     )
 
-    now = _utc_now_iso()
+    now = utc_now_iso()
     edges = graph.get("edges") if isinstance(graph.get("edges"), list) else []
     for edge in edges:
         if not isinstance(edge, dict):
@@ -11236,7 +11225,7 @@ def _find_node_id_by_label(graph: dict[str, Any], label: str) -> str | None:
     nodes_map = graph.get("nodes") if isinstance(graph.get("nodes"), dict) else {}
     if not isinstance(nodes_map, dict):
         return None
-    normalized = _normalize_account(label)
+    normalized = normalize_account_name(label)
 
     def _quality_score(node: dict[str, Any]) -> int:
         """Prefer well-formed BloodHound-backed nodes over synthetic/unknown ones."""
@@ -11271,7 +11260,7 @@ def _find_node_id_by_label(graph: dict[str, Any], label: str) -> str | None:
         if not isinstance(node, dict):
             continue
         node_label = str(node.get("label") or "")
-        if _normalize_account(node_label) != normalized:
+        if normalize_account_name(node_label) != normalized:
             continue
         matches.append((_quality_score(node), str(node_id)))
 
@@ -11445,7 +11434,7 @@ def reconcile_entry_nodes(shell: object, domain: str, graph: dict[str, Any]) -> 
         elif kind in {"User", "Computer", "Group"}:
             lookup_name = label
             if kind == "User":
-                lookup_name = _normalize_account(label)
+                lookup_name = normalize_account_name(label)
             elif kind == "Group":
                 lookup_name = _extract_group_name_from_bh(label)
             node_record = _resolve_bloodhound_principal_node(
@@ -12987,7 +12976,7 @@ def _apply_local_postprocessing_pipeline(
             summary_label="owned-terminal removed",
         )
         for rec in records:
-            term = _normalize_account(str(rec.get("target") or ""))
+            term = normalize_account_name(str(rec.get("target") or ""))
             if term in owned_labels:
                 _owned_removed += 1
                 _owned_removed_debug.log(
@@ -13517,9 +13506,9 @@ def _resolve_domain_enabled_low_priv_user_start_ids(
 
     enabled_users = get_enabled_users_for_domain(shell, domain)
     normalized_enabled_users = {
-        _normalize_account(username)
+        normalize_account_name(username)
         for username in (enabled_users or set())
-        if _normalize_account(username)
+        if normalize_account_name(username)
     }
     normalized_domain = str(domain or "").strip().upper()
     identity_snapshot = load_or_build_identity_risk_snapshot(shell, domain)
@@ -13549,7 +13538,7 @@ def _resolve_domain_enabled_low_priv_user_start_ids(
         if node_domain != normalized_domain:
             continue
 
-        normalized_username = _normalize_account(_canonical_node_label(node))
+        normalized_username = normalize_account_name(_canonical_node_label(node))
         if (
             normalized_enabled_users
             and normalized_username not in normalized_enabled_users
@@ -14207,7 +14196,7 @@ def _compute_bh_attack_paths(
             and principals
             and not allow_owned_terminal_target
         ):
-            _bh_owned_labels = frozenset(_normalize_account(p) for p in principals)
+            _bh_owned_labels = frozenset(normalize_account_name(p) for p in principals)
             _bh_owned_removed = 0
             _bh_owned_kept: list[dict[str, Any]] = []
             _bh_owned_removed_debug = attack_paths_core.SampledDebugLogger(
@@ -14215,7 +14204,7 @@ def _compute_bh_attack_paths(
                 summary_label="owned-terminal removed",
             )
             for rec in display_records:
-                term = _normalize_account(str(rec.get("target") or ""))
+                term = normalize_account_name(str(rec.get("target") or ""))
                 if term in _bh_owned_labels:
                     _bh_owned_removed += 1
                     _bh_owned_removed_debug.log(
@@ -14829,12 +14818,12 @@ def compute_display_paths_for_principals(
     snapshot_user_keys: set[str] = set()
     if isinstance(snapshot_user_to_groups, dict):
         for principal_label in snapshot_user_to_groups.keys():
-            normalized = _normalize_account(str(principal_label or ""))
+            normalized = normalize_account_name(str(principal_label or ""))
             if normalized:
                 snapshot_user_keys.add(normalized)
 
     principal_coverage_keys = [
-        _normalize_account(principal) or principal for principal in unique_principals
+        normalize_account_name(principal) or principal for principal in unique_principals
     ]
     covered_by_snapshot = (
         sum(
@@ -14967,7 +14956,7 @@ def compute_display_paths_for_principals(
         target=target,
         snapshot=snapshot,
         principal_count=len(unique_principals),
-        owned_labels=frozenset(_normalize_account(p) for p in unique_principals),
+        owned_labels=frozenset(normalize_account_name(p) for p in unique_principals),
         allow_owned_terminal_target=allow_owned_terminal_target,
     )
     _total_elapsed = max(0.0, time.monotonic() - started_at)

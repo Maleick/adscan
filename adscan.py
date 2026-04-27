@@ -3763,7 +3763,6 @@ def run_command_stream(
 
             # Process output chunks and handle both newline lines and carriage-return
             # progress updates. We treat '\r' as an in-place update delimiter and
-            # print it in a throttled way to avoid flooding the console.
             while True:
                 next_nl = pending.find("\n")
                 next_cr = pending.find("\r")
@@ -10641,7 +10640,6 @@ class PentestShell:
         else:
             self.impacket_scripts_dir = None
             # Optionally, print a warning if impacket is expected to be always available
-            # print_warning("[PentestShell] Impacket scripts directory not found. Some Impacket-based commands may not work.")
 
         # For external tools with isolated venvs (firepwd, LSA-Reaper, PKINITtools, responder)
         self.firepwd_python = get_external_tool_python("firepwd")
@@ -11044,15 +11042,6 @@ class PentestShell:
             pass
 
         # Start the output processor thread
-        # if hasattr(self, '_stop_output_processor') and hasattr(self, '_output_processor_loop'):
-        #     self._stop_output_processor.clear()
-        #     print_info_debug("[DEBUG][__init__] Attempting to start _output_processor_thread...")
-        #     self._output_processor_thread = threading.Thread(target=self._output_processor_loop, daemon=True)
-        #     self._output_processor_thread.name = "OutputProcessorThread"
-        #     self._output_processor_thread.start()
-        #     print_info_debug(f"[DEBUG][__init__] _output_processor_thread.start() called. Is alive: {self._output_processor_thread.is_alive()}")
-        # else:
-        #     print_info_debug("[CRITICAL][__init__] Output processor attributes not fully initialized. Thread not started.")
 
         # Start auto-save thread every minute - ensure it's started only once if __init__ is complex
         if (
@@ -13358,15 +13347,6 @@ class PentestShell:
             telemetry.capture_exception(e)
             display_cwd = "[unknown path]"
 
-        # Using prompt_toolkit's HTML for styling.
-        # You can define styles in self.prompt_style or use inline styles.
-        # Example inline: <style bg="#000000" fg="#ffffff">text</style>
-        # Using classes from self.prompt_style for better management:
-        # return HTML(
-        #     f'<span class="toolbar.cwd"> CWD: {display_cwd} </span>'
-        #     f'<span class="toolbar.sep"> | </span>'
-        #     f'<span class="toolbar.keys">Ctrl+L:Clear Ctrl+C:Intr Ctrl+D:Exit</span>'
-        # )
         # Build the toolbar content parts
         toolbar_parts = []
         toolbar_parts.append(
@@ -14467,13 +14447,6 @@ class PentestShell:
 
         workspace_save(self)
 
-    # def do_domain(self, args):
-    #     """Handles domain commands.
-    #     Usage: domain <create|delete|select|show>
-    #     """
-    #     if not args:
-    #         print("Usage: domain <create|delete|select|show>")
-    #         return
 
     #     command, *sub_args = args.split()
 
@@ -18610,10 +18583,6 @@ class PentestShell:
 
         return run_ldap_anonymous(self, domain)
 
-    # def do_nmap_ldap(self, domain):
-    #     command = f"nmap -n -Pn -sV --script \"ldap* and not brute\" -p 389 {self.pdc} -oN ldap/ldap_scan"
-    #     print_success(f"Performing LDAP scan with nmap")
-    #     threading.Thread(target=self.execute_nmap_ldap, args=(command,)).start()
 
     def nopac(self, domain):
         """
@@ -19678,8 +19647,6 @@ class PentestShell:
                     f"BloodHound executed successfully on domain {marked_domain}."
                 )
                 # Optionally, print stdout if needed, e.g., for confirmation or summary
-                # if completed_process.stdout:
-                #     print_info(f"BloodHound output:\n{completed_process.stdout.strip()}")
             else:
                 marked_domain = mark_sensitive(domain, "domain")
                 print_error(
@@ -20788,7 +20755,6 @@ class PentestShell:
                                 f"Error writing vulnerable DCs file for {cve_name}: {str(e_write_dc)}"
                             )
                     # else: # Optional: too verbose to print 'no vulnerable DCs' for every cve
-                    # print_warning(f"No vulnerable DCs found for {cve_name} via coercion.")
 
                     if cve_data["non_dc"]:
                         output_file_non_dc = f"domains/{target_domain}/smb/{cve_name}_vulnerable_non_dc.txt"
@@ -20806,7 +20772,6 @@ class PentestShell:
                                 f"Error writing vulnerable non-DC hosts file for {cve_name}: {str(e_write_non_dc)}"
                             )
                     # else: # Optional: too verbose
-                    # print_warning(f"No vulnerable non-DC hosts found for {cve_name} via coercion.")
 
                     # Update the report for the current cve_name
                     # Original logic for 'value' in execute_netexec_cve_all_coerce only stored dcs and non_dcs.
@@ -25324,13 +25289,6 @@ class PentestShell:
         )
 
         # Modify the command for RDP outside of execute_command
-        # if service == "rdp":
-        #     marked_username = mark_sensitive(username, "user")
-        #     marked_password = mark_sensitive(password, "password")
-        #     marked_domain = mark_sensitive(domain, "domain")
-        #     marked_domain = mark_sensitive(domain, "domain")
-        #     marked_username = mark_sensitive(username, "user")
-        #     command = f"{self.netexec_path} smb enabled_computers_ips.txt -u '{marked_username}' -p '{marked_password}' -d {marked_domain} -t 16 --timeout 15 --log domains/{marked_domain}/{service}/{marked_username}_privs.log -M rdplogin"
 
         def execute_command():
             from adscan_internal.rich_output import mark_sensitive
@@ -26938,7 +26896,6 @@ class PentestShell:
         # Check if the sub-workspace already exists
         if os.path.exists(sub_workspace_path):
             marked_domain = mark_sensitive(domain, "domain")
-            # print_error(f"The sub-workspace {marked_domain} already exists within {self.current_workspace}.")
             return
 
         # Create the sub-workspace
@@ -27533,7 +27490,6 @@ class PentestShell:
                 break  # End the loop once the hash is found and processed
             else:
                 # Uncomment the following line to see other output for debugging if needed
-                # print(line.strip())
                 continue
 
     def close_smb(self, proc):
@@ -28908,7 +28864,6 @@ class PentestShell:
             # self.current_path = os.getcwd()
             # The prompt will reflect os.getcwd() if it's designed to do so dynamically
             # For example, if _get_rich_prompt_object uses os.getcwd()
-            # print_info(f"Current directory changed to: {os.getcwd()}") # Optional feedback
         except OSError as e:
             telemetry.capture_exception(e)
             print_error("cd: Error changing directory to {target_path}.")
@@ -29666,7 +29621,6 @@ def get_tool_executable_path(tool_key):
 
     if not exe_name:
         # This tool might be a library or its executable isn't defined for direct calling this way.
-        # print_warning(f"No executable name defined for tool '{tool_key}' in PipToolsConfig.")
         return None  # Or raise an error, depending on desired strictness
 
     return os.path.join(TOOL_VENVS_BASE_DIR, tool_key, "venv", "bin", exe_name)

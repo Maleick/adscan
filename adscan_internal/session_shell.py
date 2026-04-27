@@ -1,20 +1,11 @@
 """Isolated session Shell for interactive remote sessions.
 
-This module defines a lightweight REPL that operates in the context of a
-single ``RemoteSession`` managed by :class:`adscan_internal.sessions.SessionManager`.
+Defines a lightweight REPL that operates in the context of a single
+``RemoteSession`` managed by :class:`adscan_internal.sessions.SessionManager`.
 
-The goal is to separate:
-
-- The *workspace* shell (``PentestShell`` in ``adscan.py``) that orchestrates
-  enumeration, reporting, etc.
-- The *session* shell that provides a focused set of commands to work with a
-  specific remote session (interaction, file transfer helpers, etc.).
-
-The initial implementation builds on top of existing helpers in ``PentestShell``
-such as ``do_session``, ``do_system``, and the WinRM-based upload/download
-wrappers, instead of introducing a full custom agent protocol. This keeps the
-design modular and ready for future evolution towards an agent-based model
-similar to Penelope.
+Separates the *workspace* shell (``PentestShell`` in ``adscan.py``) from the
+*session* shell that provides focused commands for a specific remote session
+(interaction, file transfer helpers, etc.).
 """
 
 from __future__ import annotations

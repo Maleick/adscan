@@ -4,7 +4,6 @@ This module provides LDAP-specific enumeration operations including
 user enumeration, group enumeration, and computer enumeration.
 """
 
-from collections.abc import Callable
 from typing import List, Optional, Dict, Any
 from dataclasses import dataclass, field
 import subprocess
@@ -16,14 +15,10 @@ from adscan_internal.subprocess_env import (
     command_string_needs_clean_env,
     get_clean_env_for_compilation,
 )
-from adscan_internal.execution_outcomes import (
-    result_is_exact_ldap_connection_timeout,
-)
+from adscan_internal.types import CommandExecutor
 
 
 logger = logging.getLogger(__name__)
-
-CommandExecutor = Callable[[str, int], subprocess.CompletedProcess[str]]
 
 
 def _default_executor(command: str, timeout: int) -> subprocess.CompletedProcess[str]:

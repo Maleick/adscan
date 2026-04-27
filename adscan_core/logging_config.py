@@ -161,15 +161,6 @@ def init_logging(
     )
     try:
         if is_reinitialization:
-            # from adscan_internal.rich_output import print_info
-            # print_info(
-            #     f"[TELEMETRY_DIAG] init_logging called (RE-INITIALIZATION): "
-            #     f"verbose_mode_param={verbose_mode}, debug_mode_param={debug_mode}, "
-            #     f"has_console={console is not None}, "
-            #     f"has_telemetry_console={telemetry_console is not None}, "
-            #     f"telemetry_console_id={id(telemetry_console) if telemetry_console else None}, "
-            #     f"existing_telemetry_handler_id={id(_telemetry_console_handler) if _telemetry_console_handler else None}"
-            # )
             pass
     except Exception:
         pass  # Don't fail if diagnostic logging fails
@@ -222,7 +213,6 @@ def init_logging(
     # DIAGNOSTIC: Log telemetry handler preservation logic (only on re-initialization)
     try:
         if is_reinitialization and _telemetry_console_handler is not None:
-            # from adscan_internal.rich_output import print_info
             old_console_id = (
                 id(_telemetry_console_handler.console)
                 if _telemetry_console_handler.console
@@ -230,14 +220,6 @@ def init_logging(
             )
             new_console_id = id(telemetry_console) if telemetry_console else None
             _console_changed = old_console_id != new_console_id
-            # print_info(
-            #     f"[TELEMETRY_DIAG] init_logging telemetry handler check: "
-            #     f"has_preserved_handler={_telemetry_console_handler is not None}, "
-            #     f"has_new_console={telemetry_console is not None}, "
-            #     f"old_console_id={old_console_id}, new_console_id={new_console_id}, "
-            #     f"console_changed={console_changed}"
-            # )
-            pass
     except Exception:
         pass  # Don't fail if diagnostic logging fails
 
@@ -386,31 +368,6 @@ def init_logging(
         console_handler.setLevel(logging.ERROR)
         _diag_log("Console handler level set to ERROR")
 
-    # DIAGNOSTIC: Log console handler level setup (write directly to file handler)
-    # COMMENTED: Not directly related to module re-execution tracking
-    # try:
-    #     if _file_handler is not None:
-    #         preserved_info = ""
-    #         if preserved_console_level is not None:
-    #             preserved_info = f", preserved_level={preserved_console_level} (preserved from existing handler)"
-    #         diagnostic_msg = (
-    #             f"[LOGGING_DIAG] init_logging console handler setup: "
-    #             f"verbose_mode={verbose_mode}, debug_mode={debug_mode}, "
-    #             f"console_handler_level={console_handler.level} (DEBUG=10, INFO=20, ERROR=40)"
-    #             f"{preserved_info}"
-    #         )
-    #         _file_handler.emit(logging.LogRecord(
-    #             name="adscan.diagnostic",
-    #             level=logging.DEBUG,
-    #             pathname="",
-    #             lineno=0,
-    #             msg=diagnostic_msg,
-    #             args=(),
-    #             exc_info=None
-    #         ))
-    # except Exception:
-    #     pass  # Don't fail if diagnostic logging fails
-
     logger.addHandler(console_handler)
     _console_handler = console_handler
 
@@ -428,13 +385,6 @@ def init_logging(
         # Even if a preserved handler exists, create new to avoid buffer mismatch
         try:
             if is_reinitialization:
-                # from adscan_internal.rich_output import print_info
-                # print_info(
-                #     f"[TELEMETRY_DIAG] Creating NEW telemetry handler: "
-                #     f"new_console_id={id(telemetry_console)}, "
-                #     f"had_preserved_handler={preserved_telemetry_handler is not None}, "
-                #     f"preserved_handler_id={id(preserved_telemetry_handler) if preserved_telemetry_handler else None}"
-                # )
                 pass
         except Exception:
             pass
@@ -452,24 +402,8 @@ def init_logging(
                     old_console.file, "getvalue"
                 ):
                     old_buffer_content = old_console.file.getvalue()
-                    try:
-                        if is_reinitialization:
-                            # from adscan_internal.rich_output import print_info
-                            # print_info(
-                            #     f"[TELEMETRY_DIAG] Preserving old buffer content: "
-                            #     f"old_buffer_length={len(old_buffer_content)}, "
-                            #     f"old_console_id={id(old_console)}"
-                            # )
-                            pass
-                    except Exception:
-                        pass
             except Exception:
-                try:
-                    # from adscan_internal.rich_output import print_info
-                    # print_info(f"[TELEMETRY_DIAG] Error preserving old buffer: {e}")
-                    pass
-                except Exception:
-                    pass
+                pass
 
         telemetry_handler = RichHandler(
             rich_tracebacks=True,
@@ -493,24 +427,8 @@ def init_logging(
                 if hasattr(new_buffer, "write"):
                     # Write old content to new buffer
                     new_buffer.write(old_buffer_content)
-                    try:
-                        if is_reinitialization:
-                            # from adscan_internal.rich_output import print_info
-                            # print_info(
-                            #     f"[TELEMETRY_DIAG] Restored old buffer content to new console: "
-                            #     f"old_content_length={len(old_buffer_content)}, "
-                            #     f"new_buffer_length={len(new_buffer.getvalue()) if hasattr(new_buffer, 'getvalue') else 'unknown'}"
-                            # )
-                            pass
-                    except Exception:
-                        pass
             except Exception:
-                try:
-                    # from adscan_internal.rich_output import print_info
-                    # print_info(f"[TELEMETRY_DIAG] Error restoring old buffer: {e}")
-                    pass
-                except Exception:
-                    pass
+                pass
 
         try:
             # from adscan_internal.rich_output import print_info
@@ -712,27 +630,6 @@ def update_logging_console_level(
         else:
             _console_handler.setLevel(logging.ERROR)
             _diag_log("update_logging_console_level: set console handler ERROR")
-
-        # DIAGNOSTIC: Log the new level (write directly to file handler)
-        # COMMENTED: Not directly related to module re-execution tracking
-        # try:
-        #     new_level = _console_handler.level
-        #     if _file_handler is not None:
-        #         diagnostic_msg = (
-        #             f"[LOGGING_DIAG] update_logging_console_level result: "
-        #             f"new_console_level={new_level} (DEBUG=10, INFO=20, ERROR=40)"
-        #         )
-        #         _file_handler.emit(logging.LogRecord(
-        #             name="adscan.diagnostic",
-        #             level=logging.DEBUG,
-        #             pathname="",
-        #             lineno=0,
-        #             msg=diagnostic_msg,
-        #             args=(),
-        #             exc_info=None
-        #         ))
-        # except Exception:
-        #     pass  # Don't fail if diagnostic logging fails
 
     # File handlers control what is persisted to disk. We default to INFO+ so
     # DEBUG-level internals are only written when debug mode is explicitly

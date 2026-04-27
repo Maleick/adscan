@@ -13,9 +13,11 @@ from adscan_internal.execution_outcomes import (
     build_timeout_completed_process,
 )
 from adscan_internal.text_utils import normalize_cli_output
+from adscan_internal.types import FlexibleCommandExecutor
 
 
-RunCommand = Callable[..., subprocess.CompletedProcess[str] | None]
+# Re-export for backward compatibility
+RunCommand = FlexibleCommandExecutor
 LastErrorGetter = Callable[[], tuple[str, Exception] | None]
 
 

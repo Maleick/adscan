@@ -82,7 +82,7 @@ class ProgressEvent(Event):
     current_step: Optional[int] = None
     total_steps: Optional[int] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Set event type to PROGRESS."""
         self.event_type = EventType.PROGRESS
 
@@ -121,7 +121,7 @@ class VulnerabilityFoundEvent(Event):
     affected_entities: List[str] = field(default_factory=list)
     details: Dict[str, Any] = field(default_factory=dict)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Set event type to VULNERABILITY_FOUND."""
         self.event_type = EventType.VULNERABILITY_FOUND
 
@@ -159,7 +159,7 @@ class CredentialFoundEvent(Event):
     source: str = ""
     is_admin: bool = False
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Set event type to CREDENTIAL_FOUND."""
         self.event_type = EventType.CREDENTIAL_FOUND
 
@@ -258,3 +258,14 @@ class NullEventBus:
     def emit(self, event: Event) -> None:
         """No-op emit."""
         pass
+
+
+__all__ = [
+    "EventType",
+    "Event",
+    "ProgressEvent",
+    "VulnerabilityFoundEvent",
+    "CredentialFoundEvent",
+    "EventBus",
+    "NullEventBus",
+]

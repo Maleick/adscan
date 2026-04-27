@@ -1,7 +1,4 @@
-"""CLI helpers for BloodHound-related commands.
-
-This module handles ACE enumeration and other BloodHound operations.
-"""
+"""CLI helpers for BloodHound-related commands."""
 
 from __future__ import annotations
 

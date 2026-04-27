@@ -212,7 +212,7 @@ def _record_update_health(
         ctx.print_info_debug(f"[update] Failed to persist local update health: {exc}")
 
 
-def get_launcher_update_info(ctx: UpdateContext) -> dict:
+def get_launcher_update_info(ctx: UpdateContext) -> dict[str, Any]:
     """Return current/latest launcher versions and whether an update is available."""
     info: dict[str, object] = {
         "current": ctx.get_installed_version(),
@@ -240,7 +240,7 @@ def get_launcher_update_info(ctx: UpdateContext) -> dict:
             info["is_newer"] = version.parse(str(latest)) > version.parse(
                 str(info["current"])
             )
-        except Exception:
+        except version.InvalidVersion:
             ctx.print_info_debug(
                 "[version-check] Failed to compare versions via packaging; falling back "
                 "to string comparison"
@@ -253,7 +253,7 @@ def get_launcher_update_info(ctx: UpdateContext) -> dict:
         return info
 
 
-def _get_local_image_digest(ctx: UpdateContext, image: str) -> dict:
+def _get_local_image_digest(ctx: UpdateContext, image: str) -> dict[str, Any]:
     """Return local image digest/id for a Docker image (best-effort)."""
     info: dict[str, object] = {"digest": None, "image_id": None}
     try:
@@ -284,7 +284,7 @@ def _get_local_image_digest(ctx: UpdateContext, image: str) -> dict:
     return info
 
 
-def _get_remote_image_digest(ctx: UpdateContext, image: str) -> dict:
+def _get_remote_image_digest(ctx: UpdateContext, image: str) -> dict[str, Any]:
     """Return remote image digest from docker manifest inspect (best-effort)."""
     info: dict[str, object] = {"digest": None, "error": None}
     try:
@@ -312,7 +312,7 @@ def _get_remote_image_digest(ctx: UpdateContext, image: str) -> dict:
         return info
 
 
-def get_docker_update_info(ctx: UpdateContext) -> dict:
+def get_docker_update_info(ctx: UpdateContext) -> dict[str, Any]:
     """Return update status for the Docker image (best-effort)."""
     info: dict[str, object] = {
         "image": ctx.get_docker_image_name(),

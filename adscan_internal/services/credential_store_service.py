@@ -1,9 +1,6 @@
 """Credential storage service for domain and local credentials.
 
-This module centralizes updates to the in-memory ``domains_data`` mapping that
-is currently maintained by the CLI shell in ``adscan.py``. The goal is to
-express these updates in a reusable, testable service that can be consumed
-both by the CLI and by future frontends (e.g. a web backend).
+Centralizes updates to the in-memory ``domains_data`` mapping.
 
 The store focuses on:
 

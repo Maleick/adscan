@@ -23,6 +23,8 @@ from __future__ import annotations
 from collections import deque
 from dataclasses import dataclass
 from datetime import datetime, timezone
+
+from adscan_core.time_utils import utc_now_iso
 import hashlib
 import json
 import os
@@ -108,12 +110,6 @@ class LigoloProxyPaths:
     stdout_log: Path
     stderr_log: Path
     api_log: Path
-
-
-def _utc_now_iso() -> str:
-    """Return the current UTC timestamp as an ISO-8601 string."""
-
-    return datetime.now(timezone.utc).isoformat()
 
 
 def _is_pid_running(pid: int | None) -> bool:
@@ -333,7 +329,7 @@ class LigoloProxyService:
         if not str(stored_record.get("tunnel_id") or "").strip():
             stored_record["tunnel_id"] = uuid.uuid4().hex[:12]
         stored_record.setdefault("status", "running")
-        stored_record["updated_at"] = _utc_now_iso()
+        stored_record["updated_at"] = utc_now_iso()
         tunnels.append(stored_record)
         self.save_tunnels_state(tunnels)
         return dict(stored_record)
@@ -350,7 +346,7 @@ class LigoloProxyService:
                 continue
             updated_record = dict(record)
             updated_record.update(updates)
-            updated_record["updated_at"] = _utc_now_iso()
+            updated_record["updated_at"] = utc_now_iso()
             records[index] = updated_record
             self.save_tunnels_state(records)
             return dict(updated_record)
@@ -421,8 +417,8 @@ class LigoloProxyService:
             self._api_request(method="DELETE", path=f"/api/v1/tunnel/{agent_id}")
 
         target_record["status"] = "stopped"
-        target_record["stopped_at"] = _utc_now_iso()
-        target_record["updated_at"] = _utc_now_iso()
+        target_record["stopped_at"] = utc_now_iso()
+        target_record["updated_at"] = utc_now_iso()
         records[target_index] = target_record
         self.save_tunnels_state(records)
         return target_record
@@ -657,11 +653,11 @@ class LigoloProxyService:
             "pid": pid,
             "proxy_path": command[0],
             "selfcert_domain": selfcert_domain,
-            "started_at": _utc_now_iso(),
+            "started_at": utc_now_iso(),
             "status": "running",
             "stderr_log": str(self.paths.stderr_log),
             "stdout_log": str(self.paths.stdout_log),
-            "updated_at": _utc_now_iso(),
+            "updated_at": utc_now_iso(),
             "workspace_dir": str(self.workspace_dir),
         }
 
@@ -797,7 +793,7 @@ class LigoloProxyService:
             )
             failed_state["status"] = "failed"
             failed_state["failure_reason"] = "interactive_bootstrap"
-            failed_state["updated_at"] = _utc_now_iso()
+            failed_state["updated_at"] = utc_now_iso()
             self.save_state(failed_state)
             raise RuntimeError(
                 "Ligolo proxy entered interactive first-run bootstrap instead of loading the managed "
@@ -818,7 +814,7 @@ class LigoloProxyService:
             )
             failed_state["status"] = "failed"
             failed_state["last_exit_code"] = int(returncode)
-            failed_state["updated_at"] = _utc_now_iso()
+            failed_state["updated_at"] = utc_now_iso()
             self.save_state(failed_state)
             raise RuntimeError(
                 f"ligolo-ng proxy exited during startup (exit_code={returncode})"
@@ -1427,7 +1423,7 @@ class LigoloProxyService:
         pid = state.get("pid")
         if not _is_pid_running(pid):
             state["status"] = "stopped"
-            state["updated_at"] = _utc_now_iso()
+            state["updated_at"] = utc_now_iso()
             self.save_state(state)
             return state
 
@@ -1450,8 +1446,8 @@ class LigoloProxyService:
                 os.kill(int(pid), signal.SIGKILL)
 
         state["status"] = "stopped"
-        state["stopped_at"] = _utc_now_iso()
-        state["updated_at"] = _utc_now_iso()
+        state["stopped_at"] = utc_now_iso()
+        state["updated_at"] = utc_now_iso()
         self.save_state(state)
         self._emit_detached_result_debug(
             pid=int(pid),
@@ -1475,7 +1471,7 @@ class LigoloProxyService:
         state["alive"] = _is_pid_running(pid)
         if state.get("status") == "running" and not state["alive"]:
             state["status"] = "stale"
-        state["updated_at"] = _utc_now_iso()
+        state["updated_at"] = utc_now_iso()
         return state
 
     def read_recent_logs(self, *, max_lines: int = 20) -> dict[str, list[str]]:

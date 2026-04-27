@@ -1,13 +1,4 @@
-"""Certipy-based Pass-the-Certificate service.
-
-This module encapsulates the logic required to perform a "Pass the
-Certificate" operation using Certipy. The goal is to keep subprocess
-command construction, execution, and output parsing out of the CLI
-monolith in ``adscan.py`` so that:
-
-* The core behaviour can be tested in isolation.
-* Future frontends (e.g. a web backend) can reuse the same logic.
-"""
+"""Certipy-based Pass-the-Certificate service."""
 
 from __future__ import annotations
 

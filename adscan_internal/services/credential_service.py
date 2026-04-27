@@ -1,10 +1,6 @@
-"""Credential service for credential-related operations.
+"""Credential service for credential-related operations."""
 
-This module provides services for credential verification, roasting attacks
-(Kerberoast, ASREPRoast), and password spraying.
-"""
-
-from typing import Callable, Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from enum import Enum
 import re
@@ -27,6 +23,7 @@ from adscan_internal.subprocess_env import (
     command_string_needs_clean_env,
     get_clean_env_for_compilation,
 )
+from adscan_internal.types import CommandExecutor
 
 
 logger = logging.getLogger(__name__)
@@ -35,8 +32,6 @@ _NETEXEC_NEGATIVE_AUTH_LINE_RE = re.compile(
     r"\[-\]\s+(?P<principal>[^\s]+(?:\\|/)[^:\s]+):",
     re.IGNORECASE,
 )
-
-CommandExecutor = Callable[[str, int], subprocess.CompletedProcess[str] | None]
 
 
 def _default_executor(command: str, timeout: int) -> subprocess.CompletedProcess[str]:
@@ -157,7 +152,7 @@ class RoastingResult:
     success: bool = False
     error_message: Optional[str] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialize roastable_users if None."""
         if self.roastable_users is None:
             self.roastable_users = []

@@ -1,9 +1,4 @@
-"""Best-effort local TCP port diagnostics shared across ADscan components.
-
-This module centralizes listener inspection and bind-availability checks so
-feature-specific flows can share one consistent view of occupied local ports
-without coupling their remediation logic.
-"""
+"""Best-effort local TCP port diagnostics shared across ADscan components."""
 
 from __future__ import annotations
 

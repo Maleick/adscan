@@ -1,8 +1,4 @@
-"""Workspace models for project and session management.
-
-This module defines models for managing ADScan workspaces, which organize
-scans, domains, and results for different projects or engagements.
-"""
+"""Workspace models for project and session management."""
 
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Any
@@ -261,3 +257,10 @@ class WorkspaceStatistics:
             Number of CRITICAL + HIGH vulnerabilities
         """
         return self.critical_vulnerabilities + self.high_vulnerabilities
+
+
+__all__ = [
+    "WorkspaceType",
+    "Workspace",
+    "WorkspaceStatistics",
+]

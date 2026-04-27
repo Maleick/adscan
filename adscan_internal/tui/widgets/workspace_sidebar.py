@@ -44,7 +44,7 @@ class WorkspaceSidebar(Widget):
             return
 
         for domain in workspaces:
-            domain_data: dict = {}
+            domain_data: dict[str, Any] = {}
             try:
                 domain_data = shell.domains_data.get(domain) or {}
             except Exception:  # noqa: BLE001

@@ -783,7 +783,7 @@ def check_go_toolchain(
             "   Install with: adscan install (will install Go from official golang.org source)"
         )
         deps.print_info(
-            "   Or manually: curl -L https://go.dev/dl/go1.23.4.linux-amd64.tar.gz | sudo tar -C /usr/local -xzf -"
+            "   Or manually: https://go.dev/dl/ (download go1.23.4 for your architecture)"
         )
         all_ok = False
 
@@ -1045,7 +1045,7 @@ def check_external_tools(
                     try:
                         signal_name = signal.Signals(-exc.returncode).name
                         error_message = f"Command died with <Signals.{signal_name}: {-exc.returncode}>."
-                    except Exception:  # noqa: BLE001
+                    except ValueError:
                         error_message = f"Command died with signal {-exc.returncode}."
 
                 if isinstance(exc, subprocess.CalledProcessError):
@@ -1583,7 +1583,7 @@ def _normalize_missing_system_packages_for_runtime(
                     text=True,
                     timeout=60,
                 )
-            except Exception as exc:  # noqa: BLE001
+            except (OSError, subprocess.TimeoutExpired) as exc:  # noqa: BLE001
                 deps.telemetry_capture_exception(exc)
             else:
                 combined_output = "\n".join(
@@ -1630,7 +1630,7 @@ def _normalize_missing_system_packages_for_runtime(
                     text=True,
                     timeout=60,
                 )
-            except Exception as exc:  # noqa: BLE001
+            except (OSError, subprocess.TimeoutExpired) as exc:  # noqa: BLE001
                 deps.telemetry_capture_exception(exc)
                 deps.print_info_debug(
                     f"[check] Failed to probe FreeRDP candidate {freerdp_executable}: {exc}"
@@ -1668,7 +1668,7 @@ def _normalize_missing_system_packages_for_runtime(
                     text=True,
                     timeout=60,
                 )
-            except Exception as exc:  # noqa: BLE001
+            except (OSError, subprocess.TimeoutExpired) as exc:  # noqa: BLE001
                 deps.telemetry_capture_exception(exc)
                 deps.print_info_debug(
                     f"[check] Failed to probe Medusa candidate {medusa_executable}: {exc}"
@@ -2600,7 +2600,7 @@ def check_go_tools(*, config: GoToolsCheckConfig, deps: GoToolsCheckDeps) -> boo
             "   Install with: adscan install (will install Go from official golang.org source)"
         )
         deps.print_info(
-            "   Or manually: curl -L https://go.dev/dl/go1.23.4.linux-amd64.tar.gz | sudo tar -C /usr/local -xzf -"
+            "   Or manually: https://go.dev/dl/ (download go1.23.4 for your architecture)"
         )
         all_ok = False
 

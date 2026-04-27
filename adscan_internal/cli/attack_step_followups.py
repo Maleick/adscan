@@ -21,6 +21,7 @@ from rich.prompt import Confirm, Prompt
 from rich.table import Table
 from rich.text import Text
 
+from adscan_core.text_utils import normalize_account_name
 from adscan_internal import (
     print_error,
     print_info,
@@ -235,16 +236,6 @@ def _select_followup_execution_option(
     return options[selected_idx]
 
 
-def _normalize_account(value: str) -> str:
-    """Normalize a domain account label to a SAM-like lowercase identifier."""
-    name = strip_sensitive_markers(str(value or "")).strip()
-    if "\\" in name:
-        name = name.split("\\", 1)[1]
-    if "@" in name:
-        name = name.split("@", 1)[0]
-    return name.strip().lower()
-
-
 def _resolve_domain_credential(
     shell: Any,
     *,
@@ -252,7 +243,7 @@ def _resolve_domain_credential(
     username: str,
 ) -> str | None:
     """Return a stored credential for a domain user using case-insensitive lookup."""
-    normalized = _normalize_account(username)
+    normalized = normalize_account_name(username)
     if not normalized:
         return None
     domain_data = getattr(shell, "domains_data", {}).get(domain, {})
@@ -260,7 +251,7 @@ def _resolve_domain_credential(
     if not isinstance(credentials, dict):
         return None
     for stored_user, stored_credential in credentials.items():
-        if _normalize_account(str(stored_user)) != normalized:
+        if normalize_account_name(str(stored_user)) != normalized:
             continue
         if not isinstance(stored_credential, str):
             return None
@@ -2869,7 +2860,7 @@ def build_followups_for_execution_outcome(
     if (
         not credential
         and exec_password
-        and _normalize_account(exec_username) == _normalize_account(added_user)
+        and normalize_account_name(exec_username) == normalize_account_name(added_user)
     ):
         credential = exec_password
     marked_user = mark_sensitive(added_user, "user")

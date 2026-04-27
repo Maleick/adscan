@@ -502,29 +502,6 @@ def update_modes(
     try:
         from .logging_config import update_logging_console_level
 
-        # DIAGNOSTIC: Log when update_modes is called (write directly to file handler)
-        # COMMENTED: Not directly related to module re-execution tracking
-        # try:
-        #     from .logging_config import _file_handler
-        #     import logging
-        #     if _file_handler is not None:
-        #         diagnostic_msg = (
-        #             f"[LOGGING_DIAG] update_modes called: "
-        #             f"verbose_mode={verbose_mode}, debug_mode={debug_mode}, secret_mode={secret_mode}, "
-        #             f"_verbose_mode={_verbose_mode}, _debug_mode={_debug_mode}, _secret_mode={_secret_mode}"
-        #         )
-        #         _file_handler.emit(logging.LogRecord(
-        #             name="adscan.diagnostic",
-        #             level=logging.DEBUG,
-        #             pathname="",
-        #             lineno=0,
-        #             msg=diagnostic_msg,
-        #             args=(),
-        #             exc_info=None
-        #         ))
-        # except Exception:
-        #     pass  # Don't fail if diagnostic logging fails
-
         update_logging_console_level(
             verbose_mode=_verbose_mode,
             debug_mode=_debug_mode,
@@ -1291,7 +1268,7 @@ def _handle_spacing(message_type: str, is_panel: bool, spacing: str = "auto") ->
     return spacing_before
 
 
-def reset_spacing():
+def reset_spacing() -> None:
     """Reset spacing tracking (useful for new sections or after major operations)."""
     global _last_message_type, _last_was_panel
     _last_message_type = None
@@ -1536,7 +1513,7 @@ def print_info(
     _log_to_file(logging.INFO, _build_persisted_message(message, items))
 
 
-def print_info_verbose(message: Union[str, Text], panel: bool = False, icon: str = "ℹ"):
+def print_info_verbose(message: Union[str, Text], panel: bool = False, icon: str = "ℹ") -> None:
     """Print verbose informational message (only if verbose or debug mode enabled).
 
     This function uses the logger directly, which will:
@@ -1554,40 +1531,6 @@ def print_info_verbose(message: Union[str, Text], panel: bool = False, icon: str
     global _verbose_mode, _debug_mode
     plain_text = _extract_plain_text(message)
     logger = _get_logger()
-
-    # DIAGNOSTIC: Log telemetry handler status for debugging
-    # COMMENTED: Not directly related to module re-execution tracking
-    # Use print_info() directly (not logger) to ensure diagnostic is always visible
-    # even if logger has issues
-    # try:
-    #     from .logging_config import _telemetry_console_handler, _console_handler
-    #     has_telemetry_handler = _telemetry_console_handler is not None
-    #     telemetry_handler_level = _telemetry_console_handler.level if _telemetry_console_handler else None
-    #     logger_handlers_count = len(logger.handlers)
-    #     logger_has_telemetry = any(
-    #         h == _telemetry_console_handler for h in logger.handlers
-    #     ) if _telemetry_console_handler else False
-    #
-    #     # Get handler types for debugging
-    #     handler_types = [type(h).__name__ for h in logger.handlers]
-    #
-    #     # Print diagnostic info directly (bypasses logger to ensure visibility)
-    #     diagnostic_msg = (
-    #         f"[TELEMETRY_DIAG] print_info_verbose: "
-    #         f"verbose_mode={_verbose_mode}, debug_mode={_debug_mode}, "
-    #         f"has_telemetry_handler={has_telemetry_handler}, "
-    #         f"telemetry_handler_level={telemetry_handler_level}, "
-    #         f"logger_handlers_count={logger_handlers_count}, "
-    #         f"logger_has_telemetry={logger_has_telemetry}, "
-    #         f"handler_types={handler_types}, "
-    #         f"console_handler_level={_console_handler.level if _console_handler else None}, "
-    #         f"message_preview={plain_text[:50]}..."
-    #     )
-    #     # Use print_info() directly to ensure diagnostic is always visible
-    #     print_info(diagnostic_msg)
-    # except Exception:
-    #     # Don't fail if diagnostic logging fails
-    #     pass
 
     # When verbose/debug is disabled, do not emit anything to the console.
     # We still want these messages persisted to the log files.
@@ -1632,57 +1575,6 @@ def print_info_verbose(message: Union[str, Text], panel: bool = False, icon: str
     else:
         logger.info(message, stacklevel=2)
 
-    # DIAGNOSTIC: Verify telemetry handler is receiving messages
-    # COMMENTED: Not directly related to module re-execution tracking
-    # try:
-    #     from .logging_config import _telemetry_console_handler, get_logger
-    #     telemetry_console = _get_telemetry_console()
-    #     fresh_logger = get_logger()
-    #
-    #     # Check handler state
-    #     has_telemetry_handler = _telemetry_console_handler is not None
-    #     handler_console_id = id(_telemetry_console_handler.console) if _telemetry_console_handler and _telemetry_console_handler.console else None
-    #     telemetry_console_id = id(telemetry_console) if telemetry_console else None
-    #     console_match = handler_console_id == telemetry_console_id
-    #
-    #     # Check if handler is in logger
-    #     logger_has_telemetry = _telemetry_console_handler in fresh_logger.handlers if _telemetry_console_handler else False
-    #
-    #     # Check buffer length to see if handler is writing to it
-    #     buffer_length = None
-    #     if telemetry_console and hasattr(telemetry_console, 'file'):
-    #         try:
-    #             file_obj = telemetry_console.file
-    #             if hasattr(file_obj, 'getvalue'):
-    #                 buffer_length = len(file_obj.getvalue())
-    #         except Exception:
-    #             pass
-    #
-    #     print_info(
-    #         f"[TELEMETRY_DIAG] After logger.info() call (verbose): "
-    #         f"has_telemetry_handler={has_telemetry_handler}, "
-    #         f"handler_console_id={handler_console_id}, "
-    #         f"telemetry_console_id={telemetry_console_id}, "
-    #         f"console_match={console_match}, "
-    #         f"logger_has_telemetry={logger_has_telemetry}, "
-    #         f"logger_handlers_count={len(fresh_logger.handlers)}, "
-    #         f"buffer_length={buffer_length}"
-    #     )
-    # except Exception as e:
-    #     print_info(f"[TELEMETRY_DIAG] Error checking telemetry handler state (verbose): {e}")
-    #
-    # # DIAGNOSTIC: Also try to send directly to telemetry console to verify it's working
-    # try:
-    #     telemetry_console = _get_telemetry_console()
-    #     if telemetry_console is not None:
-    #         # Try to send diagnostic message directly to telemetry console
-    #         diagnostic_msg = f"[TELEMETRY_DIRECT] print_info_verbose: {plain_text[:50]}..."
-    #         telemetry_console.print(diagnostic_msg)
-    #     else:
-    #         print_info("[TELEMETRY_DIAG] telemetry_console is None in print_info_verbose")
-    # except Exception as e:
-    #     print_info(f"[TELEMETRY_DIAG] Error sending to telemetry console (verbose): {e}")
-
     # FALLBACK: If RichHandler is not configured or not showing messages,
     # use logger-style format to ensure visibility and differentiation (this should not happen in normal operation)
     # This is a safety net in case the RichHandler level is not configured correctly
@@ -1699,7 +1591,7 @@ def print_info_verbose(message: Union[str, Text], panel: bool = False, icon: str
             _print_logger_format_fallback("INFO", message, level_color="blue")
 
 
-def print_info_debug(message: Union[str, Text], panel: bool = False, icon: str = "ℹ"):
+def print_info_debug(message: Union[str, Text], panel: bool = False, icon: str = "ℹ") -> None:
     """Print debug informational message (only if debug mode enabled).
 
     This function uses the logger directly, which will:
@@ -1759,57 +1651,6 @@ def print_info_debug(message: Union[str, Text], panel: bool = False, icon: str =
     else:
         logger.debug(message, stacklevel=2)
 
-    # DIAGNOSTIC: Verify telemetry handler is receiving messages
-    # COMMENTED: Not directly related to module re-execution tracking
-    # try:
-    #     from .logging_config import _telemetry_console_handler, get_logger
-    #     telemetry_console = _get_telemetry_console()
-    #     fresh_logger = get_logger()
-    #
-    #     # Check handler state
-    #     has_telemetry_handler = _telemetry_console_handler is not None
-    #     handler_console_id = id(_telemetry_console_handler.console) if _telemetry_console_handler and _telemetry_console_handler.console else None
-    #     telemetry_console_id = id(telemetry_console) if telemetry_console else None
-    #     console_match = handler_console_id == telemetry_console_id
-    #
-    #     # Check if handler is in logger
-    #     logger_has_telemetry = _telemetry_console_handler in fresh_logger.handlers if _telemetry_console_handler else False
-    #
-    #     # Check buffer length to see if handler is writing to it
-    #     buffer_length = None
-    #     if telemetry_console and hasattr(telemetry_console, 'file'):
-    #         try:
-    #             file_obj = telemetry_console.file
-    #             if hasattr(file_obj, 'getvalue'):
-    #                 buffer_length = len(file_obj.getvalue())
-    #         except Exception:
-    #             pass
-    #
-    #     print_info(
-    #         f"[TELEMETRY_DIAG] After logger.debug() call: "
-    #         f"has_telemetry_handler={has_telemetry_handler}, "
-    #         f"handler_console_id={handler_console_id}, "
-    #         f"telemetry_console_id={telemetry_console_id}, "
-    #         f"console_match={console_match}, "
-    #         f"logger_has_telemetry={logger_has_telemetry}, "
-    #         f"logger_handlers_count={len(fresh_logger.handlers)}, "
-    #         f"buffer_length={buffer_length}"
-    #     )
-    # except Exception as e:
-    #     print_info(f"[TELEMETRY_DIAG] Error checking telemetry handler state: {e}")
-    #
-    # # DIAGNOSTIC: Also try to send directly to telemetry console to verify it's working
-    # try:
-    #     telemetry_console = _get_telemetry_console()
-    #     if telemetry_console is not None:
-    #         # Try to send diagnostic message directly to telemetry console
-    #         diagnostic_msg = f"[TELEMETRY_DIRECT] print_info_debug: {plain_text[:50]}..."
-    #         telemetry_console.print(diagnostic_msg)
-    #     else:
-    #         print_info("[TELEMETRY_DIAG] telemetry_console is None in print_info_debug")
-    # except Exception as e:
-    #     print_info(f"[TELEMETRY_DIAG] Error sending to telemetry console: {e}")
-
     # FALLBACK: If RichHandler is not configured or not showing messages,
     # use logger-style format to ensure visibility and differentiation (this should not happen in normal operation)
     # This is a safety net in case the RichHandler level is not configured correctly
@@ -1826,7 +1667,7 @@ def print_info_debug(message: Union[str, Text], panel: bool = False, icon: str =
             _print_logger_format_fallback("DEBUG", message, level_color="cyan")
 
 
-def print_event_debug(message: Union[str, Text], panel: bool = False, icon: str = "◈"):
+def print_event_debug(message: Union[str, Text], panel: bool = False, icon: str = "◈") -> None:
     """Print structured-event diagnostics with a dedicated debug channel.
 
     This uses the exact same debug/telemetry path as ``print_info_debug``:
@@ -2153,7 +1994,7 @@ def print_success_debug(
             _print_logger_format_fallback("DEBUG", message, level_color="cyan")
 
 
-def print_success_tick(message: Union[str, Text], panel: bool = False):
+def print_success_tick(message: Union[str, Text], panel: bool = False) -> None:
     """Print success message with tick icon (alias for print_success with tick).
 
     Args:
@@ -2708,7 +2549,7 @@ def print_panel(
     title_align: Optional[str] = None,
     border_style: Optional[str] = None,
     box: Box = ROUNDED,
-    padding: tuple = (1, 2),
+    padding: tuple[int, int] = (1, 2),
     expand: bool = True,
     fit: bool = False,
     spacing: str = "auto",
@@ -3061,7 +2902,7 @@ def print_panel_with_table(
     title: Optional[str] = None,
     border_style: Optional[str] = None,
     box: Box = ROUNDED,
-    padding: tuple = (1, 2),
+    padding: tuple[int, int] = (1, 2),
     expand: bool = True,
     spacing: str = "auto",
 ):

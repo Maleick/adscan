@@ -692,7 +692,7 @@ def _guard_supported_host_platform(
         )
         raise SystemExit(2)
 
-    if normalized_arch in {"x86_64", "amd64"}:
+    if normalized_arch in {"x86_64", "amd64", "arm64", "aarch64"}:
         return
 
     if _allow_unsupported_arch_override():
@@ -719,11 +719,11 @@ def _guard_supported_host_platform(
         return
 
     print_error(
-        "ADscan launcher Docker mode currently supports x86_64/amd64 Linux hosts only."
+        "ADscan launcher Docker mode currently supports x86_64/amd64/arm64 Linux hosts only."
     )
     print_instruction(f"Detected architecture: {host_arch}")
     print_instruction(
-        "Use a x86_64 Linux host, or rebuild/run the container stack with compatible images."
+        "Use a supported Linux host (x86_64 or arm64), or rebuild/run the container stack with compatible images."
     )
     print_instruction(
         "System requirements: https://www.adscanpro.com/docs/getting-started/system-requirements"

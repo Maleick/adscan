@@ -1,8 +1,4 @@
-"""Decorators for ADScan services.
-
-This module provides decorators for license checks,
-authentication requirements, and operation validation.
-"""
+"""Decorators for ADScan services."""
 
 from functools import wraps
 from typing import Callable, Any
@@ -59,13 +55,13 @@ def requires_auth(min_auth_mode: AuthMode) -> Callable:
             if isinstance(current_auth_mode, str):
                 try:
                     current_auth_mode = AuthMode(current_auth_mode)
-                except ValueError:
+                except ValueError as exc:
                     logger.error(f"Invalid auth_mode: {current_auth_mode}")
                     raise AuthenticationError(
                         operation=func.__name__,
                         required_auth_mode=min_auth_mode.value,
                         current_auth_mode=str(current_auth_mode),
-                    )
+                    ) from exc
 
             # Check auth level
             required_level = AUTH_HIERARCHY[min_auth_mode]

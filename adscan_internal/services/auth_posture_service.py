@@ -9,8 +9,9 @@ claiming absolute truth from a single tool error.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from typing import Any, Mapping
+
+from adscan_core.time_utils import utc_now_iso
 
 
 AuthPostureStatus = str
@@ -156,7 +157,7 @@ def _record_ntlm_evidence(
             protocols[protocol_key] = new_status
 
     ntlm["domain_status"] = _merge_ntlm_status(domain_status_before, new_status)
-    ntlm["updated_at"] = _utc_now_iso()
+    ntlm["updated_at"] = utc_now_iso()
     domain_status_after = str(ntlm.get("domain_status") or "unknown").strip().lower()
     if domain_status_after not in _VALID_NTLM_STATUSES:
         domain_status_after = "unknown"
@@ -170,7 +171,7 @@ def _record_ntlm_evidence(
                 "signal": str(signal or "").strip() or "unknown",
                 "message": str(message or "").strip() or None,
                 "status": new_status,
-                "timestamp": _utc_now_iso(),
+                "timestamp": utc_now_iso(),
             }
         )
         if len(evidence) > 20:
@@ -232,6 +233,3 @@ def _get_domain_entry(
     return None
 
 
-def _utc_now_iso() -> str:
-    """Return current UTC timestamp in ISO-8601 format."""
-    return datetime.now(timezone.utc).isoformat()

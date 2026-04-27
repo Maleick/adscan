@@ -437,16 +437,16 @@ def _release_runtime_session_lock(handle: Any | None) -> None:
         handle.truncate()
         handle.flush()
         os.fsync(handle.fileno())
-    except OSError:
-        pass
+    except OSError as exc:
+        print_info_debug(f"[runtime-lock] failed to truncate lock file: {exc}")
     try:
         fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
-    except OSError:
-        pass
+    except OSError as exc:
+        print_info_debug(f"[runtime-lock] failed to unlock lock file: {exc}")
     try:
         handle.close()
-    except OSError:
-        pass
+    except OSError as exc:
+        print_info_debug(f"[runtime-lock] failed to close lock file: {exc}")
 
 
 def _emit_bloodhound_ce_config_diagnostics(
@@ -956,7 +956,7 @@ def _emit_docker_compose_missing_diagnostics(*, command_name: str) -> None:
             compose_v2_rc = int(proc.returncode)
             compose_v2_first_line = _extract_first_nonempty_line(proc.stdout or "")
             compose_v2_error_line = _extract_first_nonempty_line(proc.stderr or "")
-        except Exception as exc:  # pragma: no cover - best effort only
+        except (OSError, subprocess.TimeoutExpired) as exc:  # pragma: no cover - best effort only
             telemetry.capture_exception(exc)
             compose_v2_error_line = str(exc)
 
@@ -974,7 +974,7 @@ def _emit_docker_compose_missing_diagnostics(*, command_name: str) -> None:
             compose_v1_rc = int(proc.returncode)
             compose_v1_first_line = _extract_first_nonempty_line(proc.stdout or "")
             compose_v1_error_line = _extract_first_nonempty_line(proc.stderr or "")
-        except Exception as exc:  # pragma: no cover - best effort only
+        except (OSError, subprocess.TimeoutExpired) as exc:  # pragma: no cover - best effort only
             telemetry.capture_exception(exc)
             compose_v1_error_line = str(exc)
 
@@ -1277,7 +1277,7 @@ def _emit_docker_runtime_context(*, command_name: str) -> None:
             if compose_v2_proc.returncode == 0 and "compose" in compose_v2_text.lower():
                 compose_mode = "v2"
                 compose_version = _parse_compose_version(compose_v2_text)
-        except Exception as exc:  # pragma: no cover - best effort only
+        except (OSError, subprocess.TimeoutExpired) as exc:  # pragma: no cover - best effort only
             telemetry.capture_exception(exc)
 
         if compose_mode == "missing" and compose_v1_bin:
@@ -1452,7 +1452,7 @@ def _run_docker_pull_dns_preflight(*, host: str = _DOCKER_PULL_DNS_PREFLIGHT_HOS
             },
         )
         return False
-    except Exception as exc:  # pragma: no cover - best effort only
+    except (OSError, socket.gaierror) as exc:  # pragma: no cover - best effort only
         telemetry.capture_exception(exc)
         print_info_debug(
             "[docker] pull DNS preflight skipped after unexpected error: "
@@ -1740,8 +1740,8 @@ def pull_runtime_image_with_diagnostics(
 def _emit_docker_daemon_troubleshooting_snapshot(*, stage: str) -> None:
     """Emit focused diagnostics when Docker daemon is unreachable.
 
-    The goal is to provide actionable debug context (service state, socket and
-    DOCKER_HOST hints) without requiring users to rerun extra commands first.
+    Provides actionable debug context (service state, socket and DOCKER_HOST
+    hints) without requiring users to rerun extra commands first.
     """
     docker_host = os.getenv("DOCKER_HOST", "").strip()
     if docker_host:
@@ -2083,7 +2083,7 @@ def _persist_bloodhound_ce_config(
         BH_CONFIG_FILE.write_text("", encoding="utf-8")  # ensure file exists
         with open(BH_CONFIG_FILE, "w", encoding="utf-8") as fp:
             config.write(fp)
-    except Exception as exc:
+    except OSError as exc:
         telemetry.capture_exception(exc)
         print_warning("Failed to persist BloodHound CE config on the host.")
         return False
@@ -2201,7 +2201,7 @@ def _reset_bloodhound_ce_stack_for_password_recovery(compose_path: Path) -> bool
                     f"[bloodhound-ce] reset down stderr: {proc_down.stderr}"
                 )
             return False
-    except Exception as exc:  # noqa: BLE001
+    except (OSError, subprocess.TimeoutExpired) as exc:  # noqa: BLE001
         telemetry.capture_exception(exc)
         print_warning("Error while resetting BloodHound CE stack for recovery.")
         print_info_debug(
@@ -2772,7 +2772,7 @@ def _ensure_bloodhound_config_mountable() -> bool:
                 f"{mark_sensitive(str(BH_CONFIG_FILE), 'path')}"
             )
         return True
-    except Exception as exc:
+    except OSError as exc:
         telemetry.capture_exception(exc)
         print_info_debug(
             "[bloodhound-ce] failed to prepare host config for bind-mount: "
@@ -2830,7 +2830,7 @@ def _get_managed_bloodhound_container_statuses() -> dict[str, str] | None:
             capture_output=True,
             timeout=15,
         )
-    except Exception as exc:  # noqa: BLE001
+    except (OSError, subprocess.TimeoutExpired) as exc:  # noqa: BLE001
         telemetry.capture_exception(exc)
         print_info_debug(
             "[bloodhound-ce] managed status probe exception: "
@@ -2927,7 +2927,7 @@ def _inspect_container_runtime_state(container_name: str) -> dict[str, str] | No
             capture_output=True,
             timeout=15,
         )
-    except Exception as exc:  # noqa: BLE001
+    except (OSError, subprocess.TimeoutExpired) as exc:  # noqa: BLE001
         telemetry.capture_exception(exc)
         print_info_debug(
             "[bloodhound-ce] inspect state probe exception: "
@@ -3106,7 +3106,7 @@ def _print_bloodhound_ce_readiness_diagnostics() -> None:
                 capture_output=True,
                 timeout=20,
             )
-        except Exception as exc:
+        except (OSError, subprocess.TimeoutExpired) as exc:
             telemetry.capture_exception(exc)
             print_info_debug(
                 "[bloodhound-ce] readiness diagnostics command failed: "
@@ -3184,7 +3184,7 @@ def _resolve_self_executable() -> str:
         candidate = Path(sys.argv[0]).expanduser()
         if candidate.is_file():
             return str(candidate.resolve())
-    except Exception:
+    except OSError:
         pass
     which = shutil.which(sys.argv[0]) if sys.argv else None
     if which:
@@ -3616,7 +3616,7 @@ def _host_listeners_on_port_53() -> tuple[set[str], bool, set[str], set[int]]:
             text=True,
             timeout=5,
         )
-    except Exception:
+    except (OSError, subprocess.TimeoutExpired):
         tcp = None
 
     try:
@@ -3627,7 +3627,7 @@ def _host_listeners_on_port_53() -> tuple[set[str], bool, set[str], set[int]]:
             text=True,
             timeout=5,
         )
-    except Exception:
+    except (OSError, subprocess.TimeoutExpired):
         udp = None
 
     combined = "\n".join(
@@ -4228,10 +4228,10 @@ def _stop_host_helper(proc: subprocess.Popen[str] | None) -> None:
     try:
         proc.terminate()
         proc.wait(timeout=3)
-    except Exception:
+    except (OSError, subprocess.TimeoutExpired):
         try:
             proc.kill()
-        except Exception:
+        except OSError:
             pass
 
 
@@ -4297,7 +4297,7 @@ def _detect_gpu_docker_run_args() -> tuple[str, ...]:
                 # Only enable when docker advertises the nvidia runtime.
                 if "nvidia" in (info_proc.stdout or "").lower():
                     args.extend(["--gpus", "all"])
-        except Exception:
+        except (OSError, subprocess.TimeoutExpired):
             # Never fail hard on GPU detection.
             pass
 
@@ -4373,7 +4373,7 @@ def _print_docker_install_summary(
 
     console = _get_console()
     telemetry_console = _get_telemetry_console()
-    renderables: list = []
+    renderables: list[Any] = []
 
     # ── BloodHound CE section ──
     effective_url = (
@@ -5117,7 +5117,7 @@ def handle_check_docker(
                             print_info_debug(f"[docker] probe stderr:\n{proc.stderr}")
                         if proc.stdout:
                             print_info_debug(f"[docker] probe stdout:\n{proc.stdout}")
-                except Exception as exc:  # pragma: no cover
+                except (OSError, subprocess.TimeoutExpired) as exc:  # pragma: no cover
                     telemetry.capture_exception(exc)
                     print_warning(
                         "Docker-mode execution probe failed due to an exception."
@@ -5234,7 +5234,7 @@ def handle_start_docker(
                     print_info_debug(
                         "[bloodhound-ce] host config missing; no mount for ~/.bloodhound_config"
                     )
-            except Exception:
+            except OSError:
                 pass
 
             cfg = DockerRunConfig(
@@ -5410,7 +5410,7 @@ def handle_ci_docker(
                     print_info_debug(
                         "[bloodhound-ce] host config missing; no mount for ~/.bloodhound_config"
                     )
-            except Exception:
+            except OSError:
                 pass
             cfg = DockerRunConfig(
                 image=image,
@@ -5609,7 +5609,7 @@ def run_adscan_passthrough_docker(
                             f"{BH_CONFIG_FILE}:/opt/adscan/.bloodhound_config",
                         ]
                     )
-            except Exception:
+            except OSError:
                 pass
 
             cfg = DockerRunConfig(

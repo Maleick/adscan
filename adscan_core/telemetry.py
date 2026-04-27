@@ -59,50 +59,48 @@ from adscan_core.version_context import (
     resolve_installed_version_info,
 )
 
-try:
-    from adscan_internal.services.session_compromise_state_service import (
-        build_session_compromise_metadata,
-        normalize_session_compromise_status,
+# Session compromise helpers are kept local to adscan_core to avoid a circular
+# dependency on adscan_internal (adscan_internal already imports from adscan_core).
+_SESSION_COMPROMISE_STATUS_UNKNOWN = "unknown"
+_SESSION_COMPROMISE_STATUS_NONE = "none"
+_SESSION_COMPROMISE_STATUS_USER = "user"
+_SESSION_COMPROMISE_STATUS_DOMAIN = "domain"
+_SESSION_COMPROMISE_STATUS_VALUES = frozenset(
+    {
+        _SESSION_COMPROMISE_STATUS_UNKNOWN,
+        _SESSION_COMPROMISE_STATUS_NONE,
+        _SESSION_COMPROMISE_STATUS_USER,
+        _SESSION_COMPROMISE_STATUS_DOMAIN,
+    }
+)
+
+
+def normalize_session_compromise_status(value: Any) -> str:
+    """Return a valid session compromise status label."""
+    normalized = str(value or "").strip().lower()
+    if normalized in _SESSION_COMPROMISE_STATUS_VALUES:
+        return normalized
+    return _SESSION_COMPROMISE_STATUS_UNKNOWN
+
+
+def build_session_compromise_metadata(shell: Any) -> dict[str, Any]:
+    """Return telemetry-safe compromise metadata for one shell session."""
+    status = normalize_session_compromise_status(
+        getattr(shell, "_session_compromise_status", None)
     )
-except ImportError:
-    _SESSION_COMPROMISE_STATUS_UNKNOWN = "unknown"
-    _SESSION_COMPROMISE_STATUS_NONE = "none"
-    _SESSION_COMPROMISE_STATUS_USER = "user"
-    _SESSION_COMPROMISE_STATUS_DOMAIN = "domain"
-    _SESSION_COMPROMISE_STATUS_VALUES = frozenset(
-        {
-            _SESSION_COMPROMISE_STATUS_UNKNOWN,
-            _SESSION_COMPROMISE_STATUS_NONE,
+    compromised_users = getattr(shell, "_session_compromised_users", set())
+    if not isinstance(compromised_users, set):
+        compromised_users = set()
+
+    return {
+        "compromise_status": status,
+        "user_compromised": status in {
             _SESSION_COMPROMISE_STATUS_USER,
             _SESSION_COMPROMISE_STATUS_DOMAIN,
-        }
-    )
-
-    def normalize_session_compromise_status(value: Any) -> str:
-        """Return a valid session compromise status label."""
-        normalized = str(value or "").strip().lower()
-        if normalized in _SESSION_COMPROMISE_STATUS_VALUES:
-            return normalized
-        return _SESSION_COMPROMISE_STATUS_UNKNOWN
-
-    def build_session_compromise_metadata(shell: Any) -> dict[str, Any]:
-        """Return telemetry-safe compromise metadata for one shell session."""
-        status = normalize_session_compromise_status(
-            getattr(shell, "_session_compromise_status", None)
-        )
-        compromised_users = getattr(shell, "_session_compromised_users", set())
-        if not isinstance(compromised_users, set):
-            compromised_users = set()
-
-        return {
-            "compromise_status": status,
-            "user_compromised": status in {
-                _SESSION_COMPROMISE_STATUS_USER,
-                _SESSION_COMPROMISE_STATUS_DOMAIN,
-            },
-            "domain_compromised": status == _SESSION_COMPROMISE_STATUS_DOMAIN,
-            "compromised_users_count": len(compromised_users),
-        }
+        },
+        "domain_compromised": status == _SESSION_COMPROMISE_STATUS_DOMAIN,
+        "compromised_users_count": len(compromised_users),
+    }
 
 if TYPE_CHECKING:
     from rich.text import Text
@@ -4224,7 +4222,7 @@ def _vercel_timestamp_fields(
     return timestamps
 
 
-def _vercel_version_field() -> dict:
+def _vercel_version_field() -> dict[str, Any]:
     """Return normalized version context fields for Vercel session payloads."""
     version_fields = get_telemetry_version_fields()
     payload: dict[str, Any] = {}
@@ -4548,41 +4546,11 @@ def capture_session_end(console=None, metadata: Optional[dict] = None):
             and hasattr(console, "export_html")
         ):
             try:
-                # Import debug functions (already imported at module level, but keeping for clarity)
-                # from adscan_internal.rich_output import print_info_debug, print_warning_debug
-
                 print_info_debug("Exporting Rich console recording...")
-
-                # DIAGNOSTIC: Check console state before exporting
-                # COMMENTED: Not directly related to module re-execution tracking
-                # console_id = id(console) if console else None
-                # buffer_length = None
-                # if console and hasattr(console, 'file'):
-                #     try:
-                #         file_obj = console.file
-                #         if hasattr(file_obj, 'getvalue'):
-                #             buffer_length = len(file_obj.getvalue())
-                #     except Exception:
-                #         pass
-                #
-                # print_info_debug(
-                #     f"[TELEMETRY_DIAG] capture_session_end: "
-                #     f"console_id={console_id}, "
-                #     f"buffer_length={buffer_length}, "
-                #     f"console_has_export={hasattr(console, 'export_html') if console else False}"
-                # )
 
                 # Export Rich recording
                 html_content = console.export_html()
                 text_content = console.export_text()
-
-                # DIAGNOSTIC: Check exported content size
-                # COMMENTED: Not directly related to module re-execution tracking
-                # print_info_debug(
-                #     f"[TELEMETRY_DIAG] capture_session_end exported: "
-                #     f"html_size={len(html_content)}, "
-                #     f"text_size={len(text_content)}"
-                # )
 
                 print_info_debug(
                     f"Exported recording: HTML={len(html_content)} bytes, "
@@ -4630,8 +4598,6 @@ def capture_session_end(console=None, metadata: Optional[dict] = None):
                     )
 
             except (ValueError, RuntimeError, AttributeError) as e:
-                # Import debug functions (already imported at module level, but keeping for clarity)
-                # from adscan_internal.rich_output import print_warning_debug, print_info_debug
                 print_warning_debug(f"Failed to export/send Rich recording: {e}")
                 print_info_debug(f"Export error details: {type(e).__name__} - {str(e)}")
 

@@ -62,7 +62,7 @@ def _set_cert_var(
         env.pop(var_name, None)
 
 
-def configure_ssl_certificates(env: dict) -> dict:
+def configure_ssl_certificates(env: dict[str, str]) -> dict[str, str]:
     """Configure SSL certificate environment variables for Python/pip operations.
 
     This function ensures that SSL certificate variables point to valid certificate

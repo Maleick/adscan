@@ -1,9 +1,4 @@
-"""Responder CLI orchestration helpers.
-
-This module extracts Responder management logic out of the monolithic
-`adscan.py` so it can be reused by future UX layers while keeping runtime
-behaviour stable for the current CLI.
-"""
+"""Responder CLI orchestration helpers."""
 
 from __future__ import annotations
 

@@ -1,9 +1,4 @@
-"""DNS CLI helpers.
-
-This module hosts interactive DNS management logic used by the legacy CLI.
-It intentionally depends on dependency injection (the shell object) to avoid
-import cycles into `adscan.py`.
-"""
+"""DNS CLI helpers."""
 
 from __future__ import annotations
 

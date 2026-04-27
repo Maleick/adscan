@@ -9,7 +9,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Callable
 import io
 import os
 import re
@@ -20,9 +19,7 @@ import zipfile
 from adscan_internal.file_content_type import detect_file_content_type
 from adscan_internal.integrations.impacket.parsers import parse_secretsdump_output
 from adscan_internal.services.base_service import BaseService
-
-
-CommandExecutor = Callable[..., subprocess.CompletedProcess[str] | None]
+from adscan_internal.types import FlexibleCommandExecutor as CommandExecutor
 _NTLM_HASH_DUMP_TEXT_EXTENSIONS = (".txt", ".log", ".csv")
 
 

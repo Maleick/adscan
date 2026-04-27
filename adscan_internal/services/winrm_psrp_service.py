@@ -1,8 +1,8 @@
 """Reusable WinRM/PSRP helpers for command execution and file transfer.
 
-This service centralises the PSRP-backed operations that were previously
-implemented ad hoc via ``nxc winrm -X``. The goal is to keep WinRM features
-modular and reusable while preserving the legacy NetExec flows as fallbacks.
+Centralises PSRP-backed operations previously implemented ad hoc via
+``nxc winrm -X``, keeping WinRM features modular and reusable while
+preserving legacy NetExec flows as fallbacks.
 """
 
 from __future__ import annotations

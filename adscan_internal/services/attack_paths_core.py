@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Iterable
 import json
 
+from adscan_core.text_utils import normalize_account_name
 from adscan_core.rich_output import strip_sensitive_markers
 from adscan_internal.rich_output import print_info_debug
 from adscan_internal.services import attack_graph_core
@@ -490,15 +491,6 @@ def _membership_label_to_name(label: str) -> str:
     return raw
 
 
-def _normalize_account(value: str) -> str:
-    name = strip_sensitive_markers(str(value or "")).strip()
-    if "\\" in name:
-        name = name.split("\\", 1)[1]
-    if "@" in name:
-        name = name.split("@", 1)[0]
-    return name.strip().lower()
-
-
 def _canonical_node_label(node: dict[str, Any]) -> str:
     label = node.get("label") or node.get("name")
     if isinstance(label, str) and label.strip():
@@ -578,7 +570,7 @@ def _find_node_id_by_label(graph: dict[str, Any], label: str) -> str | None:
     nodes_map = graph.get("nodes") if isinstance(graph.get("nodes"), dict) else {}
     if not isinstance(nodes_map, dict):
         return None
-    normalized = _normalize_account(label)
+    normalized = normalize_account_name(label)
 
     def _quality_score(node: dict[str, Any]) -> int:
         score = 0
@@ -612,7 +604,7 @@ def _find_node_id_by_label(graph: dict[str, Any], label: str) -> str | None:
         if not isinstance(node, dict):
             continue
         node_label = str(node.get("label") or "")
-        if _normalize_account(node_label) != normalized:
+        if normalize_account_name(node_label) != normalized:
             continue
         matches.append((_quality_score(node), str(node_id)))
 

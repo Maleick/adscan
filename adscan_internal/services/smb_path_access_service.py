@@ -19,8 +19,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from uuid import uuid4
-import re
 
+from adscan_core.text_utils import looks_like_ntlm_hash
 from adscan_internal import (
     print_info_debug,
     print_info_verbose,
@@ -31,16 +31,6 @@ from adscan_internal import (
 from adscan_internal.rich_output import mark_sensitive
 from adscan_internal.services.privileged_group_classifier import normalize_sid
 from adscan_internal.services.base_service import BaseService
-
-
-def _looks_like_ntlm_hash(value: str | None) -> bool:
-    """Return whether one credential value resembles an NTLM hash."""
-    candidate = str(value or "").strip()
-    if not candidate:
-        return False
-    if re.fullmatch(r"[0-9a-fA-F]{32}", candidate):
-        return True
-    return bool(re.fullmatch(r"[0-9a-fA-F]{32}:[0-9a-fA-F]{32}", candidate))
 
 
 def _extract_status_code(exc: Exception) -> str | None:
@@ -332,14 +322,14 @@ class SMBPathAccessService(BaseService):
         if auth_mode == "kerberos":
             lmhash = ""
             nthash = ""
-            if _looks_like_ntlm_hash(credential):
+            if looks_like_ntlm_hash(credential):
                 if ":" in credential:
                     lmhash, nthash = credential.split(":", 1)
                 else:
                     nthash = credential
             connection.kerberosLogin(  # type: ignore[attr-defined]
                 user=username,
-                password="" if _looks_like_ntlm_hash(credential) else credential,
+                password="" if looks_like_ntlm_hash(credential) else credential,
                 domain=auth_domain,
                 lmhash=lmhash,
                 nthash=nthash,
@@ -525,7 +515,7 @@ class SMBPathAccessService(BaseService):
             )
 
         credential = str(password or "").strip()
-        is_hash = _looks_like_ntlm_hash(credential)
+        is_hash = looks_like_ntlm_hash(credential)
         auth_mode = "kerberos" if use_kerberos else ("hash" if is_hash else "password")
 
         marked_host = mark_sensitive(host_clean, "host")
@@ -778,7 +768,7 @@ class SMBPathAccessService(BaseService):
             )
 
         credential = str(password or "").strip()
-        is_hash = _looks_like_ntlm_hash(credential)
+        is_hash = looks_like_ntlm_hash(credential)
         if use_kerberos:
             auth_mode = "kerberos"
         elif is_hash:
@@ -993,7 +983,7 @@ class SMBPathAccessService(BaseService):
             )
 
         credential = str(password or "").strip()
-        is_hash = _looks_like_ntlm_hash(credential)
+        is_hash = looks_like_ntlm_hash(credential)
         auth_mode = "kerberos" if use_kerberos else ("hash" if is_hash else "password")
         marked_host = mark_sensitive(host_clean, "host")
         marked_share = mark_sensitive(share_clean, "text")
@@ -1201,7 +1191,7 @@ class SMBPathAccessService(BaseService):
             )
 
         credential = str(password or "").strip()
-        is_hash = _looks_like_ntlm_hash(credential)
+        is_hash = looks_like_ntlm_hash(credential)
         auth_mode = "kerberos" if use_kerberos else ("hash" if is_hash else "password")
         marked_host = mark_sensitive(host_clean, "host")
         marked_share = mark_sensitive(share_clean, "text")

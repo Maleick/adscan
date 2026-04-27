@@ -1,9 +1,4 @@
-"""Credentials CLI orchestration helpers.
-
-This module extracts credential management logic out of the monolithic
-`adscan.py` so it can be reused by future UX layers while keeping runtime
-behaviour stable for the current CLI.
-"""
+"""Credentials CLI orchestration helpers."""
 
 from __future__ import annotations
 

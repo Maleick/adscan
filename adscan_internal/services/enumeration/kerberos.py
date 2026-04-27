@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Optional, List
+from typing import Optional, List
 import logging
 import subprocess
 import shlex
@@ -35,12 +35,10 @@ from adscan_internal.integrations.impacket import (
     KerberoastHash,
     ASREPHash,
 )
+from adscan_internal.types import CommandExecutor
 
 
 logger = logging.getLogger(__name__)
-
-
-CommandExecutor = Callable[[str, int], subprocess.CompletedProcess[str]]
 
 
 def _default_executor(command: str, timeout: int) -> subprocess.CompletedProcess[str]:

@@ -1,8 +1,4 @@
-"""Shared CTF lab catalog and whitelist helpers.
-
-This module centralizes provider display options and AD-focused lab lists so
-CLI/workspace flows do not maintain duplicated provider mappings.
-"""
+"""Shared CTF lab catalog and whitelist helpers."""
 
 from __future__ import annotations
 

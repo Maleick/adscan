@@ -1,9 +1,4 @@
-"""Shared RODC host-access outcome helpers.
-
-This module normalizes the execution outcome shape used when ADscan reaches an
-operational foothold on an RODC host, regardless of the entry vector
-(``RBCD``, ``AdminTo``, ``CanPSRemote``, etc.).
-"""
+"""Shared RODC host-access outcome helpers."""
 
 from __future__ import annotations
 

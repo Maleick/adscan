@@ -628,7 +628,7 @@ class ImpacketMSSQLBackend:
             return ""
         if isinstance(value, bytes):
             for encoding in ("utf-8", "utf-16le", "latin-1"):
-                with contextlib.suppress(Exception):
+                with contextlib.suppress(UnicodeDecodeError):
                     return value.decode(encoding)
             return value.hex()
         return str(value)
@@ -646,7 +646,7 @@ class ImpacketMSSQLBackend:
         if isinstance(value, str):
             with contextlib.suppress(ValueError):
                 return bytes.fromhex(value)
-            with contextlib.suppress(Exception):
+            with contextlib.suppress(binascii.Error):
                 return base64.b64decode(value, validate=True)
         return None
 

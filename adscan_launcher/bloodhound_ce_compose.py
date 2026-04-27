@@ -1,12 +1,9 @@
 """BloodHound CE (docker compose) helpers for Docker-first ADscan mode.
 
-This module manages the BloodHound CE stack using docker compose directly:
+Manages the BloodHound CE stack using docker compose directly:
   - ensure the pinned docker-compose.yml exists under the user's config dir
   - `docker compose pull` to prefetch required images
   - `docker compose up -d` to start the stack
-
-The goal is to avoid host-level installers and external helpers (e.g. downloading
-`bloodhound-ce-cli`) while keeping the workflow robust and repeatable.
 """
 
 from __future__ import annotations

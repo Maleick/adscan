@@ -1,0 +1,2 @@
+rtk: rtk: rtk find does not support compound predicates or actions (e.g. -not, -exec). Use `find` directly.
+rtk find does not support compound predicates or actions (e.g. -not, -exec). Use `find` directly.

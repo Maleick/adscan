@@ -2420,7 +2420,7 @@ class BloodHoundService(BaseService):
             )
             raise
 
-    def close(self):
+    def close(self) -> None:
         """Close BloodHound client connection."""
         if hasattr(self, "client") and self.client:
             try:

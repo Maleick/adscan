@@ -3234,46 +3234,6 @@ def execute_dump_lsass(shell: Any, command: str, domain: str, host: str) -> None
         print_exception(show_locals=False, exception=e)
 
 
-def execute_dump_rest(shell: Any, command: str, domain: str, host: str) -> None:
-    """Execute generic dump command and extract credentials from output.
-
-    **LEGACY/UNUSED**: This function appears to be legacy code and is not
-    currently called from anywhere in the codebase. It's kept for backward
-    compatibility and potential future use.
-
-    Args:
-        shell: The active `PentestShell` instance (from `adscan.py`).
-        command: Full command to run.
-        domain: Target domain.
-        host: Target host.
-    """
-    try:
-        completed_process = shell.run_command(command, timeout=300)
-        output_str = completed_process.stdout
-        errors_str = completed_process.stderr
-
-        if output_str:
-            for line in output_str.splitlines():
-                shell.extract_credentials(line, domain)
-
-        if errors_str:
-            print_error(f"Errors found during execution: {errors_str.strip()}")
-
-        if completed_process.returncode != 0 and (
-            not errors_str or not errors_str.strip()
-        ):
-            # If there was a non-zero return code AND no specific errors were already printed from stderr
-            print_error(
-                f"Exploit failed or process terminated with errors. Return code: {completed_process.returncode}"
-            )
-        elif completed_process.returncode == 0:
-            print_success("Process completed successfully.")
-    except Exception as e:
-        telemetry.capture_exception(e)
-        print_error("An error occurred.")
-        print_exception(show_locals=False, exception=e)
-
-
 # ============================================================================
 # CLI Command Handlers (ask_for_* and do_* functions)
 # ============================================================================

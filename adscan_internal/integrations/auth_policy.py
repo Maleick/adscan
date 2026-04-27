@@ -1,9 +1,9 @@
 """Shared authentication execution policy for external tooling.
 
-This module centralizes Kerberos-first / NTLM-fallback decisions for tools
-that operate against Active Directory. The goal is to keep runner-specific
-code focused on command execution while the auth preference logic stays
-consistent across NetExec and Impacket integrations.
+Centralizes Kerberos-first / NTLM-fallback decisions for tools that operate
+against Active Directory, keeping runner-specific code focused on command
+execution while auth preference logic stays consistent across NetExec and
+Impacket integrations.
 """
 
 from __future__ import annotations

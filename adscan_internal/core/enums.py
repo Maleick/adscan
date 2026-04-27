@@ -1,8 +1,4 @@
-"""Core enumerations for ADScan.
-
-This module provides enums for authentication modes, protocols,
-license modes, and feature flags.
-"""
+"""Core enumerations for ADScan."""
 
 from enum import Enum
 
@@ -86,3 +82,12 @@ class OperationType(str, Enum):
     LATERAL_MOVEMENT = "lateral_movement"
     PERSISTENCE = "persistence"
     ANALYSIS = "analysis"
+
+
+__all__ = [
+    "AuthMode",
+    "Protocol",
+    "LicenseMode",
+    "ScanPhase",
+    "OperationType",
+]

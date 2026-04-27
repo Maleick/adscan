@@ -1,16 +1,9 @@
 """Kerberos ticket generation service.
 
-This module encapsulates the logic required to:
-
-* Generate Kerberos TGTs and ``ccache`` files from domain credentials
-  (password, NTLM hash, or typed Kerberos AES key material).
-* Prepare a minimal Kerberos environment (``KRB5_CONFIG`` and
-  ``KRB5CCNAME``) suitable for external tools that rely on the system
-  Kerberos stack.
-
-The goal is to extract ticket-related logic out of ``adscan.py`` so it
-can be reused by both the CLI and future frontends (e.g. a web backend),
-following the service-layer architecture used in the rest of the project.
+Generates Kerberos TGTs and ``ccache`` files from domain credentials
+(password, NTLM hash, or typed Kerberos AES key material). Prepares a
+minimal Kerberos environment (``KRB5_CONFIG`` and ``KRB5CCNAME``)
+suitable for external tools that rely on the system Kerberos stack.
 """
 
 from __future__ import annotations

@@ -233,3 +233,9 @@ class Domain:
         self.current_phase = phase
         self.phase_progress = max(0.0, min(1.0, progress))  # Clamp to [0, 1]
         self.updated_at = utc_now()
+
+
+__all__ = [
+    "AuthStatus",
+    "Domain",
+]

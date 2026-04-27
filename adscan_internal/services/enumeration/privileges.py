@@ -1,7 +1,4 @@
-"""Privilege enumeration mixin.
-
-This module provides helpers for enumerating user privileges across a domain.
-"""
+"""Privilege enumeration mixin."""
 
 from __future__ import annotations
 

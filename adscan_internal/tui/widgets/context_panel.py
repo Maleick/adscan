@@ -45,7 +45,7 @@ class _AttackPathsSection(Widget):
         log = self.query_one("#attack-paths-list", Log)
         log.clear()
 
-        paths: list = []
+        paths: list[Any] = []
         try:
             bh_svc = getattr(self._shell, "_bloodhound_service", None)
             if bh_svc and hasattr(bh_svc, "get_cached_attack_paths"):
@@ -81,7 +81,7 @@ class _CredentialsSection(Widget):
         log = self.query_one("#credentials-list", Log)
         log.clear()
 
-        creds: list = []
+        creds: list[Any] = []
         try:
             cred_svc = getattr(self._shell, "_credential_service", None)
             if cred_svc and hasattr(cred_svc, "get_valid_credentials"):

@@ -1,8 +1,4 @@
-"""Workspace data loading functionality.
-
-This module handles loading workspace variables from JSON files and applying
-them to the CLI shell instance, including DNS reconfiguration and telemetry updates.
-"""
+"""Workspace data loading functionality."""
 
 from __future__ import annotations
 

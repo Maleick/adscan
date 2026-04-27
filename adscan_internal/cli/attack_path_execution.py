@@ -1,12 +1,8 @@
 """Attack path execution UX helpers.
 
-This module centralizes the interactive UX for:
-- listing attack paths (already computed from `attack_graph.json`)
-- letting the user inspect details
-- optionally executing a selected path by mapping its steps to existing ADscan actions
-
-The goal is to reuse this flow from multiple places (e.g. Phase 2 summary,
-`ask_for_user_privs`, future phases) without duplicating prompt logic.
+Centralizes the interactive UX for listing attack paths, inspecting details,
+and optionally executing a selected path by mapping its steps to existing
+ADscan actions.
 """
 
 from __future__ import annotations
@@ -25,6 +21,7 @@ from rich.prompt import Confirm, Prompt
 from rich.table import Table
 from rich.text import Text
 
+from adscan_core.text_utils import normalize_account_name
 from adscan_internal import (
     print_error,
     print_exception,
@@ -149,15 +146,6 @@ def _summary_search_mode_label(summary: dict[str, Any]) -> str:
     return describe_path_target_outcome(summary)
 
 
-def _normalize_account(value: str) -> str:
-    name = (value or "").strip()
-    if "\\" in name:
-        name = name.split("\\", 1)[1]
-    if "@" in name:
-        name = name.split("@", 1)[0]
-    return name.strip().lower()
-
-
 def _is_audit_mode(shell: Any) -> bool:
     """Return whether the current shell is running in audit mode."""
     return str(getattr(shell, "type", "") or "").strip().lower() == "audit"
@@ -167,7 +155,7 @@ def _get_stored_domain_credential_for_user(
     shell: Any, *, domain: str, username: str
 ) -> str | None:
     """Return stored credential for a domain user using case-insensitive lookup."""
-    normalized_target = _normalize_account(username)
+    normalized_target = normalize_account_name(username)
     if not normalized_target:
         return None
     domain_data = getattr(shell, "domains_data", {}).get(domain, {})
@@ -175,7 +163,7 @@ def _get_stored_domain_credential_for_user(
     if not isinstance(credentials, dict):
         return None
     for stored_user, stored_credential in credentials.items():
-        if _normalize_account(str(stored_user)) != normalized_target:
+        if normalize_account_name(str(stored_user)) != normalized_target:
             continue
         if not isinstance(stored_credential, str):
             return None
@@ -334,7 +322,7 @@ def register_writelogonscript_manual_validation(
     pending = _get_pending_writelogonscript_manual_validations(shell)
     entry = {
         "domain": str(domain or "").strip().lower(),
-        "username": _normalize_account(username),
+        "username": normalize_account_name(username),
         "credential": str(credential or ""),
         "summary": summary,
         "from_label": str(from_label or ""),
@@ -366,7 +354,7 @@ def match_writelogonscript_manual_validation(
 ) -> dict[str, Any] | None:
     """Return one pending manual validation matching a manual credential save."""
     normalized_domain = str(domain or "").strip().lower()
-    normalized_user = _normalize_account(username)
+    normalized_user = normalize_account_name(username)
     raw_credential = str(credential or "")
     for item in _get_pending_writelogonscript_manual_validations(shell):
         if str(item.get("domain") or "").strip().lower() != normalized_domain:
@@ -388,7 +376,7 @@ def clear_writelogonscript_manual_validation(
 ) -> None:
     """Clear one consumed pending manual validation entry."""
     normalized_domain = str(domain or "").strip().lower()
-    normalized_user = _normalize_account(username)
+    normalized_user = normalize_account_name(username)
     raw_credential = str(credential or "")
     pending = _get_pending_writelogonscript_manual_validations(shell)
     pending[:] = [
@@ -801,7 +789,7 @@ def _get_stored_credential_map(shell: Any, domain: str) -> dict[str, str]:
         return {}
     normalized: dict[str, str] = {}
     for username in creds.keys():
-        normalized_username = _normalize_account(str(username or ""))
+        normalized_username = normalize_account_name(str(username or ""))
         if not normalized_username:
             continue
         normalized[normalized_username] = str(username)
@@ -859,7 +847,7 @@ def _execution_readiness_meta(
         }
 
     if action == "kerberoasting":
-        normalized_context_user = _normalize_account(context_username or "")
+        normalized_context_user = normalize_account_name(context_username or "")
         if normalized_context_user:
             ready = bool(
                 context_password
@@ -1059,7 +1047,7 @@ def _execution_readiness_meta(
                 "execution_context_action": action,
             }
 
-    normalized_context_user = _normalize_account(context_username or "")
+    normalized_context_user = normalize_account_name(context_username or "")
     if normalized_context_user:
         ready = bool(
             context_password
@@ -1091,7 +1079,7 @@ def _execution_readiness_meta(
             "execution_context_action": action,
         }
 
-    normalized_from_user = _normalize_account(from_label)
+    normalized_from_user = normalize_account_name(from_label)
     from_node = (
         get_node_by_label(shell, domain, label=from_label) if from_label else None
     )
@@ -1155,7 +1143,7 @@ def _execution_readiness_meta(
         for raw_user in affected_users:
             if not isinstance(raw_user, str):
                 continue
-            normalized = _normalize_account(raw_user)
+            normalized = normalize_account_name(raw_user)
             if normalized and normalized in stored_creds:
                 ready_users.append(normalized)
         ready_users = list(dict.fromkeys(ready_users))
@@ -1472,7 +1460,7 @@ def _resolve_attack_path_step_password(
         return ""
     if (
         context_username
-        and _normalize_account(context_username) == _normalize_account(exec_username)
+        and normalize_account_name(context_username) == normalize_account_name(exec_username)
         and context_password
     ):
         return str(context_password)
@@ -2141,7 +2129,7 @@ def _resolve_golden_cert_execution_user(
     )
     creds = domain_data.get("credentials") if isinstance(domain_data, dict) else {}
     if isinstance(creds, dict) and creds:
-        from_user = _normalize_account(from_label or "")
+        from_user = normalize_account_name(from_label or "")
         cred_keys = {str(k).lower(): str(k) for k in creds.keys()}
         if from_user.endswith("$") and from_user in cred_keys:
             selected = cred_keys[from_user]
@@ -3393,7 +3381,7 @@ def _resolve_exec_password_for_user(
     """Resolve the password/hash for ``username`` without mismatching context creds."""
     if not username:
         return None
-    context_user = _normalize_account(context_username or "")
+    context_user = normalize_account_name(context_username or "")
     if context_password and context_user and username.lower() == context_user.lower():
         return context_password
     return _resolve_domain_password(shell, domain, username)
@@ -3413,8 +3401,8 @@ def _resolve_hassession_host_and_user(
     to_target = resolve_netexec_target_for_node_label(
         shell, domain, node_label=to_label
     )
-    from_user = _normalize_account(from_label)
-    to_user = _normalize_account(to_label)
+    from_user = normalize_account_name(from_label)
+    to_user = normalize_account_name(to_label)
 
     if isinstance(from_target, str) and from_target.strip():
         host = from_target.strip()
@@ -3442,7 +3430,7 @@ def _resolve_users_from_principal_label(
     principal_label: str,
 ) -> list[str]:
     """Resolve candidate users from a principal label (user or group)."""
-    normalized_user = _normalize_account(principal_label)
+    normalized_user = normalize_account_name(principal_label)
     if _is_valid_domain_username(normalized_user):
         return [normalized_user]
 
@@ -3610,7 +3598,7 @@ def _find_previous_adminto_exec_user_for_host(
         if resolved_target.strip().lower() != target_host_clean:
             continue
 
-        candidate_user = _normalize_account(from_label)
+        candidate_user = normalize_account_name(from_label)
         if not _is_valid_domain_username(candidate_user):
             continue
         if not _resolve_domain_password(shell, domain, candidate_user):
@@ -3869,7 +3857,7 @@ def _attempt_post_adminto_credential_harvest(
     if not golden_from_label:
         return
 
-    golden_exec_user = _normalize_account(golden_from_label)
+    golden_exec_user = normalize_account_name(golden_from_label)
     if not golden_exec_user.endswith("$"):
         return
 
@@ -4354,7 +4342,7 @@ def execute_selected_attack_path(
                     )
                 else:
                     followup_context = get_attack_path_followup_context(shell)
-                    compromised_user = _normalize_account(
+                    compromised_user = normalize_account_name(
                         str(effective_outcome.get("compromised_user") or "")
                     )
                     print_info_debug(
@@ -4402,7 +4390,7 @@ def execute_selected_attack_path(
             ):
                 return
 
-            compromised_user = _normalize_account(
+            compromised_user = normalize_account_name(
                 str(outcome.get("compromised_user") or "")
             )
             credential = str(outcome.get("credential") or "").strip()
@@ -4413,7 +4401,7 @@ def execute_selected_attack_path(
                 )
                 return
 
-            previous_user = _normalize_account(context_username or "")
+            previous_user = normalize_account_name(context_username or "")
             context_username = compromised_user
             context_password = credential
             marked_user = mark_sensitive(compromised_user, "user")
@@ -5682,7 +5670,7 @@ def execute_selected_attack_path(
                     print_warning(f"Cannot execute {action}: missing target principal.")
                     return execution_started
 
-                target_user = _normalize_account(to_label)
+                target_user = normalize_account_name(to_label)
                 if not target_user:
                     _record_attack_path_execution_event(
                         shell,
@@ -5923,7 +5911,7 @@ def execute_selected_attack_path(
                     )
                     print_warning(f"Cannot execute {action}: missing target user.")
                     return execution_started
-                target_user = _normalize_account(to_label)
+                target_user = normalize_account_name(to_label)
                 if not target_user:
                     _record_attack_path_execution_event(
                         shell,
@@ -7002,7 +6990,7 @@ def execute_selected_attack_path(
                             "New domain username to create",
                             default=default_user,
                         ).strip()
-                    selected_user = _normalize_account(selected_user)
+                    selected_user = normalize_account_name(selected_user)
                     if not _is_valid_domain_username(selected_user):
                         print_warning(
                             "Cannot execute HasSession: invalid new username. "
@@ -7038,7 +7026,7 @@ def execute_selected_attack_path(
                                 str(user).strip()
                                 for user in stored_creds.keys()
                                 if isinstance(user, str)
-                                and _is_valid_domain_username(_normalize_account(user))
+                                and _is_valid_domain_username(normalize_account_name(user))
                             },
                             key=str.lower,
                         )
@@ -7068,7 +7056,7 @@ def execute_selected_attack_path(
                             "Existing username to add to Domain Admins",
                             default=exec_username,
                         ).strip()
-                    target_user = _normalize_account(selected_user)
+                    target_user = normalize_account_name(selected_user)
                     if not _is_valid_domain_username(target_user):
                         print_warning(
                             "Cannot execute HasSession: invalid target username."
@@ -7484,7 +7472,7 @@ def execute_selected_attack_path(
                         "false",
                     )
 
-                target_user = _normalize_account(to_label)
+                target_user = normalize_account_name(to_label)
                 if target_user and not _resolve_domain_password(
                     shell, domain, target_user
                 ):

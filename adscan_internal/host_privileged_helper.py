@@ -41,6 +41,8 @@ from pathlib import Path
 from socket import AF_UNIX, SOCK_STREAM, socket
 from typing import Any
 
+from adscan_core.text_utils import looks_like_ntlm_hash
+
 
 _MAX_REQUEST_BYTES = 32_768
 _DEFAULT_TIMEOUT_SECONDS = 60
@@ -56,16 +58,6 @@ _SAFE_WORKSPACE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._ -]{0,127}$")
 
 _CONTAINER_WORKSPACES_DIR = "/opt/adscan/workspaces"
 _MANAGED_BLOODHOUND_SERVICES = frozenset({"bloodhound", "neo4j", "postgres"})
-
-
-def _looks_like_ntlm_hash(value: str) -> bool:
-    """Return True when value resembles an NTLM hash or LM:NT pair."""
-    candidate = value.strip()
-    if re.fullmatch(r"[0-9a-fA-F]{32}", candidate):
-        return True
-    if re.fullmatch(r"[0-9a-fA-F]{32}:[0-9a-fA-F]{32}", candidate):
-        return True
-    return False
 
 
 def _resolve_host_rdp_binary() -> str | None:
@@ -798,7 +790,7 @@ def _handle_request(req: dict[str, Any]) -> HostHelperResponse:
             f"/v:{validated_host}",
             "/cert:ignore",
         ]
-        if _looks_like_ntlm_hash(password):
+        if looks_like_ntlm_hash(password):
             argv.append(f"/pth:{password}")
         else:
             argv.append(f"/p:{password}")

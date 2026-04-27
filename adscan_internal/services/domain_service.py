@@ -1,8 +1,4 @@
-"""Domain service for domain-related operations.
-
-This module provides services for domain enumeration, trust relationships,
-and domain authentication operations.
-"""
+"""Domain service for domain-related operations."""
 
 from __future__ import annotations
 

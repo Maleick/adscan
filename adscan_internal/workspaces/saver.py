@@ -1,7 +1,4 @@
-"""Workspace data saving functionality.
-
-This module handles saving workspace and domain variables to JSON files.
-"""
+"""Workspace data saving functionality."""
 
 from __future__ import annotations
 

@@ -1,14 +1,8 @@
 """Reusable NTLM capture workflows for listeners and coercion triggers.
 
-This module provides a small orchestration layer for workflows that need to:
-
-- start a listener in the background (currently Responder)
-- trigger outbound authentication (currently Coercer)
-- observe a capture source and classify NTLMv1 vs NTLMv2
-
-The goal is to keep the capture logic reusable for future NTLM relay and
-coercion techniques without coupling the interactive CLI directly to a
-specific external tool implementation.
+Orchestrates workflows that need to start a listener in the background
+(currently Responder), trigger outbound authentication (currently Coercer),
+and observe a capture source to classify NTLMv1 vs NTLMv2.
 """
 
 from __future__ import annotations
@@ -18,10 +12,11 @@ import os
 import sqlite3
 import subprocess
 import time
-from typing import Any, Callable, Iterable, Protocol
+from typing import Any, Iterable, Protocol
 
 from adscan_internal.background_process import launch_background, stop_background
 from adscan_internal.integrations.coercer import CoercerRunner
+from adscan_internal.types import FlexibleCommandExecutor
 
 
 class SpawnShell(Protocol):
@@ -41,7 +36,8 @@ class SpawnShell(Protocol):
         ...
 
 
-RunCommand = Callable[..., subprocess.CompletedProcess[str] | None]
+# Re-export for backward compatibility
+RunCommand = FlexibleCommandExecutor
 
 
 @dataclass(frozen=True)

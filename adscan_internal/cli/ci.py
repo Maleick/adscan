@@ -1,8 +1,4 @@
-"""Legacy CI command handler.
-
-This module contains the orchestration logic for `adscan ci` (legacy mode).
-It is intentionally decoupled from `adscan.py` by injecting the shell factory.
-"""
+"""Legacy CI command handler."""
 
 from __future__ import annotations
 

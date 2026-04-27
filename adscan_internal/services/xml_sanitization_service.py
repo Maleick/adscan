@@ -244,10 +244,7 @@ def build_sanitized_xml_overlay(
         )
         path_aliases[str(target_path)] = str(original_path)
     if not path_aliases:
-        try:
-            shutil.rmtree(overlay_root, ignore_errors=True)
-        except Exception:  # noqa: BLE001
-            pass
+        shutil.rmtree(overlay_root, ignore_errors=True)
         return None
     return overlay_root, path_aliases
 

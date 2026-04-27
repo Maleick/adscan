@@ -135,7 +135,7 @@ def _get_effective_home() -> Path:
     """Return the current user's home directory (best effort)."""
     try:
         return Path.home()
-    except Exception:
+    except RuntimeError:
         return Path(os.getenv("HOME", "/"))
 
 

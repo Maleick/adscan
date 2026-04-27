@@ -6,17 +6,13 @@ from datetime import UTC, datetime
 from typing import Any
 import secrets
 
+from adscan_core.time_utils import utc_now_iso
 from adscan_internal import print_info, telemetry
 from adscan_internal.rich_output import mark_sensitive, print_panel
 from adscan_internal.services.attack_graph_service import update_edge_status_by_labels
 from adscan_internal.services.exploitation import ExploitationService
 
 _CLEANUP_SCOPE_ATTR = "_attack_path_cleanup_scopes"
-
-
-def _utc_now_iso() -> str:
-    """Return one UTC timestamp in ISO format."""
-    return datetime.now(UTC).isoformat()
 
 
 def _get_cleanup_scopes(shell: Any) -> list[dict[str, Any]]:
@@ -42,7 +38,7 @@ def begin_cleanup_scope(shell: Any, *, label: str, domain: str) -> str:
             "label": str(label or "").strip(),
             "domain": str(domain or "").strip(),
             "actions": [],
-            "started_at": _utc_now_iso(),
+            "started_at": utc_now_iso(),
         }
     )
     return scope_id
@@ -130,7 +126,7 @@ def register_cleanup_from_outcome(
 
     action = {
         "kind": "group_membership_remove",
-        "registered_at": _utc_now_iso(),
+        "registered_at": utc_now_iso(),
         "domain": str(domain or "").strip(),
         "target_domain": str(outcome.get("target_domain") or domain or "").strip(),
         "target_group": str(outcome.get("target_group") or "").strip(),
@@ -193,7 +189,7 @@ def execute_cleanup_scope(shell: Any, *, scope_id: str) -> bool:
         cleanup_notes: dict[str, Any] = {
             "cleanup_pending": True,
             "cleanup_kind": "group_membership_remove",
-            "cleanup_checked_at": _utc_now_iso(),
+            "cleanup_checked_at": utc_now_iso(),
             "cleanup_target_group": target_group,
             "cleanup_added_user": added_user,
         }
@@ -246,7 +242,7 @@ def execute_cleanup_scope(shell: Any, *, scope_id: str) -> bool:
                 {
                     "cleanup_pending": not cleanup_ok,
                     "cleanup_status": "success" if cleanup_ok else "failed",
-                    "cleanup_completed_at": _utc_now_iso(),
+                    "cleanup_completed_at": utc_now_iso(),
                     "cleanup_error": "" if cleanup_ok else str(result.raw_output or "").strip(),
                     "cleanup_already_absent": bool(getattr(result, "already_absent", False)),
                 }

@@ -1,8 +1,4 @@
-"""Wordlist management service for ADscan.
-
-This module centralizes configuration and lifecycle management for the
-wordlists used across the CLI (e.g. for cracking and spraying).
-"""
+"""Wordlist management service for ADscan."""
 
 from __future__ import annotations
 

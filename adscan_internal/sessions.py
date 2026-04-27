@@ -470,3 +470,11 @@ class SessionManager:
                 print_error_debug(
                     f"[sessions] Failed to restore terminal settings: {exc}"
                 )
+
+
+__all__ = [
+    "SessionType",
+    "RemoteSession",
+    "SessionManager",
+    "start_reverse_tcp_listener",
+]

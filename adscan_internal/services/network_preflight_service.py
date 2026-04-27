@@ -1,8 +1,4 @@
-"""Network preflight primitives shared by start and DNS flows.
-
-This module centralizes route and TCP reachability checks so UX layers can
-reuse the same diagnostics logic without duplicating subprocess parsing.
-"""
+"""Network preflight primitives shared by start and DNS flows."""
 
 from __future__ import annotations
 

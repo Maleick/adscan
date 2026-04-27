@@ -1,15 +1,4 @@
-"""CredSweeper service for credential discovery in textual files and logs.
-
-This module centralizes:
-
-- Resolution of CredSweeper rules files (``config.yaml`` and ``custom_config.yaml``)
-- Execution of the external ``credsweeper`` CLI with proper environment handling
-- Parsing and normalization of JSON output into a Python-friendly structure
-
-The goal is to decouple CredSweeper-specific logic from the monolithic
-``adscan.py`` file and make it easier to test and reuse from different
-workflows (manspider spidering logs, PowerShell history, transcripts, etc.).
-"""
+"""CredSweeper service for credential discovery in textual files and logs."""
 
 from __future__ import annotations
 
@@ -18,17 +7,12 @@ from hashlib import sha256
 from importlib import metadata as importlib_metadata
 from importlib import resources as importlib_resources
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 import json
 import logging
 import os
 import re
-import shlex
-import shutil
-import subprocess
-import sys
-import time
-import yaml
+
 
 from rich.markup import escape as rich_escape
 
@@ -57,9 +41,7 @@ from adscan_internal import telemetry
 logger = logging.getLogger(__name__)
 
 
-CommandExecutor = Callable[..., subprocess.CompletedProcess[str] | None]
-
-
+from adscan_internal.types import FlexibleCommandExecutor as CommandExecutor
 CREDSWEEPER_RULES_PROFILE_DEFAULT = "default"
 CREDSWEEPER_RULES_PROFILE_FILESYSTEM = "filesystem"
 CREDSWEEPER_RULES_PROFILE_FILESYSTEM_TEXT = "filesystem_text"

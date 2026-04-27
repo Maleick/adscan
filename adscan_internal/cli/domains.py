@@ -1,9 +1,4 @@
-"""Domain CLI helpers (workspace sub-scope).
-
-This module hosts interactive domain management logic used by the legacy CLI.
-It intentionally depends on dependency injection (the shell object) to avoid
-import cycles into `adscan.py`.
-"""
+"""Domain CLI helpers (workspace sub-scope)."""
 
 from __future__ import annotations
 

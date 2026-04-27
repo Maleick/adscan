@@ -37,6 +37,7 @@ FROM debian:trixie-slim AS john_builder
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG JOHN_BLEEDING_JUMBO_COMMIT=d8f5b0138e6f9fe24ab453f886dcaa2abb2e5407
+ARG TARGETARCH=amd64
 SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
 
 RUN apt-get update -y && apt-get install -y --no-install-recommends \
@@ -61,11 +62,11 @@ RUN set -eux; \
   ( \
     cd /opt/adscan/tools/john/src && \
     make -s -f Makefile.legacy clean && \
-    make -sj"$(nproc)" -f Makefile.legacy linux-x86-64 && \
-    cp /opt/adscan/tools/john/run/john /tmp/john-generic && \
-    ./configure --disable-native-tests --enable-simd=sse2 >/dev/null && \
-    make -s clean && \
+    ./configure --disable-native-tests >/dev/null && \
     make -sj"$(nproc)" && \
+    cp /opt/adscan/tools/john/run/john /tmp/john-generic && \
+    make -s clean && \
+    make -sj"$(nproc)" -f Makefile.legacy linux-x86-64 && \
     cp /tmp/john-generic /opt/adscan/tools/john/run/john-generic && \
     ln -sf /opt/adscan/tools/john/run/john-generic /opt/adscan/tools/john/run/john \
   ); \
@@ -85,6 +86,8 @@ ARG MEDUSA_COMMIT=fef1e1f0ee91f6108a5a48d3b3c11dc4df40b122
 ARG FREERDP_VERSION=3.24.1
 ARG FREERDP_COMMIT=b6e770ccba87c58ffd0a55366fef33361798e39c
 ARG ADSCAN_RUNTIME_CONTRACT_VERSION="1"
+ARG TARGETARCH=amd64
+ENV TARGETARCH=${TARGETARCH}
 SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
 
 ENV ADSCAN_HOME=/opt/adscan \
@@ -251,6 +254,12 @@ RUN set -eux; \
   npm install --global @openai/codex; \
   codex --version
 
+# Install Rust via apt (system-wide, required for packages like aardwolf)
+RUN apt-get update -y && apt-get install -y --no-install-recommends \
+      rustc \
+      cargo \
+    && rm -rf /var/lib/apt/lists/*
+
 # Base runtime layout
 RUN mkdir -p /opt/adscan/{bin,tools,tool_venvs,wordlists,logs,fonts} /workspaces \
   && fc-cache -f \
@@ -321,16 +330,20 @@ RUN set -eux; \
 # External tools (git/curl)
 RUN set -eux; \
   mkdir -p /opt/adscan/tools; \
-  if ! adscan-curl -fsSL "https://hashcat.net/files/hashcat-${HASHCAT_VERSION}.7z" -o /tmp/hashcat.7z; then \
-    echo "warning: official hashcat download failed; falling back to SourceForge mirror" >&2; \
-    wget --max-redirect=10 --no-check-certificate -O /tmp/hashcat.7z \
-      "https://sourceforge.net/projects/hashcat.mirror/files/v${HASHCAT_VERSION}/hashcat-${HASHCAT_VERSION}.7z/download"; \
+  if [ "${TARGETARCH}" = "amd64" ]; then \
+    if ! adscan-curl -fsSL "https://hashcat.net/files/hashcat-${HASHCAT_VERSION}.7z" -o /tmp/hashcat.7z; then \
+      echo "warning: official hashcat download failed; falling back to SourceForge mirror" >&2; \
+      wget --max-redirect=10 --no-check-certificate -O /tmp/hashcat.7z \
+        "https://sourceforge.net/projects/hashcat.mirror/files/v${HASHCAT_VERSION}/hashcat-${HASHCAT_VERSION}.7z/download"; \
+    fi; \
+    7z x /tmp/hashcat.7z -o/opt/adscan/tools >/dev/null; \
+    test -x "/opt/adscan/tools/hashcat-${HASHCAT_VERSION}/hashcat.bin"; \
+    ln -sf "/opt/adscan/tools/hashcat-${HASHCAT_VERSION}/hashcat.bin" /opt/adscan/bin/hashcat; \
+    /opt/adscan/bin/hashcat --version | grep -F "v${HASHCAT_VERSION}"; \
+    rm -f /tmp/hashcat.7z; \
+  else \
+    echo "warning: hashcat is only available for amd64; skipping on ${TARGETARCH}" >&2; \
   fi; \
-  7z x /tmp/hashcat.7z -o/opt/adscan/tools >/dev/null; \
-  test -x "/opt/adscan/tools/hashcat-${HASHCAT_VERSION}/hashcat.bin"; \
-  ln -sf "/opt/adscan/tools/hashcat-${HASHCAT_VERSION}/hashcat.bin" /opt/adscan/bin/hashcat; \
-  /opt/adscan/bin/hashcat --version | grep -F "v${HASHCAT_VERSION}"; \
-  rm -f /tmp/hashcat.7z; \
   \
   git clone --depth 1 https://github.com/Greenwolf/ntlm_theft.git /opt/adscan/tools/ntlm_theft; \
   mkdir -p /opt/adscan/tools/firepwd; \
@@ -354,17 +367,23 @@ RUN set -eux; \
   /opt/adscan/tool_venvs/PKINITtools/venv/bin/python -m pip install --no-cache-dir -r /opt/adscan/tools/PKINITtools/requirements.txt; \
   \
   mkdir -p /opt/adscan/tools/kerbrute; \
-  adscan-curl -fsSL https://github.com/ropnop/kerbrute/releases/download/v1.0.3/kerbrute_linux_amd64 -o /opt/adscan/tools/kerbrute/kerbrute; \
-  chmod +x /opt/adscan/tools/kerbrute/kerbrute; \
+  case "${TARGETARCH}" in \
+    arm64) KERBRUTE_ARCH="arm64" ;; \
+    *) KERBRUTE_ARCH="${TARGETARCH}" ;; \
+  esac; \
+  if ! adscan-curl -fsSL "https://github.com/ropnop/kerbrute/releases/download/v1.0.3/kerbrute_linux_${KERBRUTE_ARCH}" -o /opt/adscan/tools/kerbrute/kerbrute; then \
+    echo "warning: kerbrute download failed for ${KERBRUTE_ARCH}; skipping" >&2; \
+  fi; \
+  chmod +x /opt/adscan/tools/kerbrute/kerbrute || true; \
   \
-  mkdir -p /opt/adscan/tools/ligolo-ng/proxy/linux-amd64; \
+  mkdir -p /opt/adscan/tools/ligolo-ng/proxy/linux-${TARGETARCH}; \
   adscan-curl -fsSL \
-    "https://github.com/nicocha30/ligolo-ng/releases/download/v${LIGOLO_NG_VERSION}/ligolo-ng_proxy_${LIGOLO_NG_VERSION}_linux_amd64.tar.gz" \
+    "https://github.com/nicocha30/ligolo-ng/releases/download/v${LIGOLO_NG_VERSION}/ligolo-ng_proxy_${LIGOLO_NG_VERSION}_linux_${TARGETARCH}.tar.gz" \
     -o /tmp/ligolo_proxy.tar.gz; \
-  tar -xzf /tmp/ligolo_proxy.tar.gz -C /opt/adscan/tools/ligolo-ng/proxy/linux-amd64 proxy; \
-  chmod +x /opt/adscan/tools/ligolo-ng/proxy/linux-amd64/proxy; \
-  setcap cap_net_admin,cap_net_bind_service+ep /opt/adscan/tools/ligolo-ng/proxy/linux-amd64/proxy; \
-  ln -sf /opt/adscan/tools/ligolo-ng/proxy/linux-amd64/proxy /opt/adscan/bin/ligolo-proxy; \
+  tar -xzf /tmp/ligolo_proxy.tar.gz -C /opt/adscan/tools/ligolo-ng/proxy/linux-${TARGETARCH} proxy; \
+  chmod +x /opt/adscan/tools/ligolo-ng/proxy/linux-${TARGETARCH}/proxy; \
+  setcap cap_net_admin,cap_net_bind_service+ep /opt/adscan/tools/ligolo-ng/proxy/linux-${TARGETARCH}/proxy; \
+  ln -sf /opt/adscan/tools/ligolo-ng/proxy/linux-${TARGETARCH}/proxy /opt/adscan/bin/ligolo-proxy; \
   rm -f /tmp/ligolo_proxy.tar.gz; \
   \
   mkdir -p /opt/adscan/tools/ligolo-ng/agent/windows-amd64; \
@@ -454,11 +473,15 @@ RUN set -eux; \
 # Installed to /opt/adscan/bin/ which is on PATH (see ENV above).
 # CFLAGS=-w suppresses deprecation warnings that would fail on GCC 13+ with -Werror.
 RUN set -eux; \
-  git clone --depth 1 https://github.com/TheWover/donut.git /tmp/donut_build; \
-  make -C /tmp/donut_build CFLAGS="-w -O2"; \
-  cp /tmp/donut_build/donut /opt/adscan/bin/donut; \
-  chmod 0755 /opt/adscan/bin/donut; \
-  rm -rf /tmp/donut_build
+  if [ "${TARGETARCH}" = "amd64" ]; then \
+    git clone --depth 1 https://github.com/TheWover/donut.git /tmp/donut_build; \
+    make -C /tmp/donut_build CFLAGS="-w -O2"; \
+    cp /tmp/donut_build/donut /opt/adscan/bin/donut; \
+    chmod 0755 /opt/adscan/bin/donut; \
+    rm -rf /tmp/donut_build; \
+  else \
+    echo "warning: donut is only available for amd64; skipping on ${TARGETARCH}" >&2; \
+  fi
 
 # Windows attack binaries (binary_ops catalog – Tier 1 prebuilt cache).
 # Stored at /opt/adscan/tools/windows-tools/<name>/<filename> to match

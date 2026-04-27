@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import os
 from typing import Any
 
+from adscan_core.text_utils import normalize_account_name
 from adscan_internal import print_info, print_info_debug, print_warning, telemetry
 from adscan_internal.rich_output import mark_sensitive
 from adscan_internal.services.attack_path_target_viability_service import (
@@ -173,17 +174,6 @@ def _domains_dir(shell: Any) -> str:
     return str(getattr(shell, "domains_dir", "domains"))
 
 
-def _normalize_account(value: str) -> str:
-    """Normalize user labels to one SAM-like lowercase value."""
-
-    text = str(value or "").strip()
-    if "\\" in text:
-        text = text.split("\\", 1)[1]
-    if "@" in text:
-        text = text.split("@", 1)[0]
-    return text.strip().lower()
-
-
 def _load_active_pivot_hosts(shell: Any) -> set[str]:
     """Return host identifiers already serving an active Ligolo pivot."""
 
@@ -217,11 +207,11 @@ def _owned_cleartext_credentials(shell: Any, *, domain: str) -> list[tuple[str, 
     if not isinstance(credentials, dict):
         return results
     for owned_user in owned_users:
-        normalized_owned = _normalize_account(owned_user)
+        normalized_owned = normalize_account_name(owned_user)
         if not normalized_owned:
             continue
         for stored_user, stored_credential in credentials.items():
-            if _normalize_account(str(stored_user)) != normalized_owned:
+            if normalize_account_name(str(stored_user)) != normalized_owned:
                 continue
             credential = str(stored_credential or "").strip()
             if not credential or getattr(shell, "is_hash", lambda _: False)(credential):
@@ -249,7 +239,7 @@ def assess_pivot_opportunities(
     )
     history_by_key = {
         (
-            _normalize_account(str(record.get("username") or "")),
+            normalize_account_name(str(record.get("username") or "")),
             str(record.get("service") or "").strip().lower(),
             str(record.get("host") or "").strip().lower(),
         ): record
@@ -275,7 +265,7 @@ def assess_pivot_opportunities(
         if not targets:
             continue
         for username, credential in _owned_cleartext_credentials(shell, domain=domain):
-            normalized_user = _normalize_account(username)
+            normalized_user = normalize_account_name(username)
             for host in targets:
                 normalized_host = str(host or "").strip().lower()
                 if not normalized_host or normalized_host in active_pivot_hosts:

@@ -1,8 +1,4 @@
-"""Workspace CLI helpers.
-
-This module extracts the interactive workspace management logic from `adscan.py`
-so the main CLI stays a thin orchestrator.
-"""
+"""Workspace CLI helpers."""
 
 from __future__ import annotations
 

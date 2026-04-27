@@ -17,6 +17,7 @@ from typing import Any
 from rich.prompt import Confirm, Prompt
 from rich.text import Text
 
+from adscan_core.text_utils import normalize_account_name
 from adscan_internal import print_warning, telemetry
 from adscan_internal.rich_output import (
     BRAND_COLORS,
@@ -69,15 +70,6 @@ def _consume_group_membership_operation_outcome(shell: Any) -> dict[str, Any]:
     return outcome
 
 
-def _normalize_account(value: str) -> str:
-    name = strip_sensitive_markers(str(value or "")).strip()
-    if "\\" in name:
-        name = name.split("\\", 1)[1]
-    if "@" in name:
-        name = name.split("@", 1)[0]
-    return name.strip().lower()
-
-
 def _is_audit_mode(shell: Any) -> bool:
     """Return whether the current shell is running in audit mode."""
     return str(getattr(shell, "type", "") or "").strip().lower() == "audit"
@@ -126,7 +118,7 @@ def _infer_target_enabled(
     except Exception as exc:  # noqa: BLE001
         telemetry.capture_exception(exc)
         marked_target = mark_sensitive(
-            _normalize_account(_node_sam_or_label(to_node, to_label)) or to_label,
+            normalize_account_name(_node_sam_or_label(to_node, to_label)) or to_label,
             "user",
         )
         marked_domain = mark_sensitive(domain, "domain")
@@ -165,11 +157,11 @@ def _resolve_domain_password(shell: object, domain: str, username: str) -> str |
     creds = domain_data.get("credentials")
     if not isinstance(creds, dict):
         return None
-    normalized_target = _normalize_account(username)
+    normalized_target = normalize_account_name(username)
     if not normalized_target:
         return None
     for stored_user, stored_credential in creds.items():
-        if _normalize_account(str(stored_user or "")) != normalized_target:
+        if normalize_account_name(str(stored_user or "")) != normalized_target:
             continue
         if not isinstance(stored_credential, str):
             return None
@@ -186,18 +178,18 @@ def _pick_execution_user(
     from_node: dict[str, Any] | None,
 ) -> str | None:
     if context_username:
-        normalized = _normalize_account(context_username)
+        normalized = normalize_account_name(context_username)
         if normalized:
             return normalized
     applies_to = summary.get("applies_to_users")
     if isinstance(applies_to, list):
         for user in applies_to:
             if isinstance(user, str) and user.strip():
-                normalized = _normalize_account(user)
+                normalized = normalize_account_name(user)
                 if normalized:
                     return normalized
     if _node_kind(from_node).lower() == "user":
-        normalized = _normalize_account(from_label)
+        normalized = normalize_account_name(from_label)
         if normalized:
             return normalized
     return None
@@ -225,7 +217,7 @@ def _resolve_execution_user_with_source(
             rendered = f"{rendered}, +{len(cleaned) - max_items} more"
         return f"[{rendered}]"
 
-    exec_username = _normalize_account(context_username or "")
+    exec_username = normalize_account_name(context_username or "")
     if exec_username:
         print_info_debug(
             f"[exec-user] Using context username: {mark_sensitive(exec_username, 'user')}"
@@ -235,13 +227,13 @@ def _resolve_execution_user_with_source(
     creds = getattr(shell, "domains_data", {}).get(domain, {}).get("credentials", {})
     cred_keys = (
         {
-            _normalize_account(str(stored_user or "")): str(stored_user)
+            normalize_account_name(str(stored_user or "")): str(stored_user)
             for stored_user in creds.keys()
         }
         if isinstance(creds, dict)
         else {}
     )
-    from_user = _normalize_account(from_label or "")
+    from_user = normalize_account_name(from_label or "")
     if from_user and from_user in cred_keys:
         print_info_debug(
             f"[exec-user] Using from_label credential: {mark_sensitive(from_user, 'user')}"
@@ -283,7 +275,7 @@ def _resolve_execution_user_with_source(
         for raw_user in affected_users:
             if not isinstance(raw_user, str):
                 continue
-            normalized = _normalize_account(raw_user)
+            normalized = normalize_account_name(raw_user)
             if not normalized:
                 continue
             stored_key = cred_keys.get(normalized)
@@ -326,7 +318,7 @@ def _resolve_execution_user_with_source(
             print_info_debug(
                 f"[exec-user] Auto-selected sole candidate: {mark_sensitive(candidate_users[0], 'user')}"
             )
-            return _normalize_account(candidate_users[0]), "affected_users"
+            return normalize_account_name(candidate_users[0]), "affected_users"
 
         if hasattr(shell, "_questionary_select"):
             options = [
@@ -350,7 +342,7 @@ def _resolve_execution_user_with_source(
                 if not manual_user:
                     print_info_debug("[exec-user] Manual username entry empty.")
                     return None, "manual_empty"
-                normalized = _normalize_account(manual_user)
+                normalized = normalize_account_name(manual_user)
                 if not normalized:
                     print_info_debug("[exec-user] Manual username entry invalid.")
                     print_warning("Invalid username entered.")
@@ -369,13 +361,13 @@ def _resolve_execution_user_with_source(
                 print_info_debug(
                     f"[exec-user] Manual username matched credentials: {mark_sensitive(stored, 'user')}"
                 )
-                return _normalize_account(stored), "manual_selection"
+                return normalize_account_name(stored), "manual_selection"
             print_info_debug(
                 f"[exec-user] Selected candidate: {mark_sensitive(candidate_users[idx], 'user')}"
             )
-            return _normalize_account(str(candidate_users[idx])), "interactive_selection"
+            return normalize_account_name(str(candidate_users[idx])), "interactive_selection"
 
-        return _normalize_account(candidate_users[0]), "fallback_stored_credential"
+        return normalize_account_name(candidate_users[0]), "fallback_stored_credential"
 
     print_info_debug(
         "[exec-user] No execution user resolved: "
@@ -417,10 +409,10 @@ def resolve_exec_password(
     context_password: str | None,
 ) -> str | None:
     """Resolve a password/hash for ``username`` without mismatching context creds."""
-    normalized_user = _normalize_account(username)
+    normalized_user = normalize_account_name(username)
     if not normalized_user:
         return None
-    normalized_context_user = _normalize_account(context_username or "")
+    normalized_context_user = normalize_account_name(context_username or "")
     if (
         context_password
         and normalized_context_user

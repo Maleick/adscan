@@ -1,11 +1,7 @@
-"""Credential models for authentication and discovered secrets.
-
-This module defines models for managing credentials discovered during scans,
-including domain credentials, local credentials, and Kerberos tickets.
-"""
+"""Credential models for authentication and discovered secrets."""
 
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Any, Optional
 from datetime import datetime
 from enum import Enum
 
@@ -66,9 +62,9 @@ class Credential:
     discovered_at: datetime = field(default_factory=utc_now)
 
     # Additional metadata
-    metadata: dict = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert credential to dictionary.
 
         Returns:
@@ -163,9 +159,9 @@ class LocalCredential:
     discovered_at: datetime = field(default_factory=utc_now)
 
     # Additional metadata
-    metadata: dict = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert local credential to dictionary.
 
         Returns:
@@ -218,9 +214,9 @@ class KerberosTicket:
 
     # Discovery metadata
     discovered_at: datetime = field(default_factory=utc_now)
-    metadata: dict = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert ticket to dictionary.
 
         Returns:
@@ -261,3 +257,12 @@ class KerberosTicket:
         if self.service:
             return f"{self.domain}\\{self.username} -> {self.service}"
         return f"{self.domain}\\{self.username} (TGT)"
+
+
+__all__ = [
+    "CredentialType",
+    "CredentialSource",
+    "Credential",
+    "LocalCredential",
+    "KerberosTicket",
+]

@@ -1,8 +1,4 @@
-"""Scan models for scan configuration and execution tracking.
-
-This module defines models for configuring and tracking ADScan scan executions,
-including scan type, mode, status, and results.
-"""
+"""Scan models for scan configuration and execution tracking."""
 
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Any
@@ -361,3 +357,13 @@ class Scan:
             ScanStatus.FAILED,
             ScanStatus.CANCELLED,
         ]
+
+
+__all__ = [
+    "ScanType",
+    "ScanMode",
+    "ScanStatus",
+    "ScanConfiguration",
+    "ScanResult",
+    "Scan",
+]

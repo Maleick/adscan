@@ -51,18 +51,9 @@ from adscan_internal.services.service_access_results import (
     summarize_service_access_categories,
     select_confirmed_service_access_followup_targets,
 )
-from adscan_internal.text_utils import strip_ansi_codes
+from adscan_core.text_utils import looks_like_ntlm_hash, strip_ansi_codes
 from adscan_internal.workspaces.computers import load_target_entries
 
-
-def _looks_like_ntlm_hash(value: str) -> bool:
-    """Return True when value resembles an NTLM hash or LM:NT pair."""
-    candidate = value.strip()
-    if re.fullmatch(r"[0-9a-fA-F]{32}", candidate):
-        return True
-    if re.fullmatch(r"[0-9a-fA-F]{32}:[0-9a-fA-F]{32}", candidate):
-        return True
-    return False
 
 def ask_for_rdp_access(
     shell: Any, *, domain: str, host: str, username: str, password: str
@@ -206,7 +197,7 @@ def rdp_access(
     marked_username = mark_sensitive(username, "user")
     marked_password = mark_sensitive(password, "password")
     marked_host = mark_sensitive(host, "hostname")
-    use_ntlm_hash = _looks_like_ntlm_hash(password)
+    use_ntlm_hash = looks_like_ntlm_hash(password)
 
     if use_ntlm_hash:
         command = (

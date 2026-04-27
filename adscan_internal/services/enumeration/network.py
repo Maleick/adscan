@@ -1,11 +1,7 @@
 """Network enumeration mixin.
 
-This module provides network/service enumeration helpers for protocols that are
-not strictly "directory" protocols (RDP, WinRM, MSSQL, etc.).
-
-The implementation is intentionally minimal for now: it defines stable public
-types and method signatures so callers (CLI orchestration and the future web UX)
-can depend on them while we progressively migrate logic out of ``adscan.py``.
+Provides network/service enumeration helpers for non-directory protocols
+(RDP, WinRM, MSSQL, etc.).
 """
 
 from __future__ import annotations

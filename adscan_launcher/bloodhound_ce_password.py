@@ -121,7 +121,7 @@ def _extract_password_policy_error_message(response_body: str) -> str | None:
     extracted_requirements: list[str] = []
     try:
         payload = json.loads(body)
-    except Exception:  # noqa: BLE001
+    except json.JSONDecodeError:
         payload = None
     if isinstance(payload, dict):
         raw_errors = payload.get("errors")
@@ -225,7 +225,7 @@ def _get_container_started_at(container_name: str) -> str | None:
             capture_output=True,
             timeout=15,
         )
-    except Exception as exc:
+    except (OSError, subprocess.TimeoutExpired) as exc:
         telemetry.capture_exception(exc)
         print_info_debug(
             "[bloodhound-ce] container started-at probe exception "
@@ -271,7 +271,7 @@ def _list_bloodhound_container_candidates(
             capture_output=True,
             timeout=15,
         )
-    except Exception as exc:
+    except (OSError, subprocess.TimeoutExpired) as exc:
         telemetry.capture_exception(exc)
         print_info_debug(f"[bloodhound-ce] container listing probe exception: {exc}")
         return candidates
@@ -406,7 +406,7 @@ def _emit_container_log_tail(container_name: str, *, lines: int = 80) -> None:
             capture_output=True,
             timeout=30,
         )
-    except Exception as exc:  # noqa: BLE001
+    except (OSError, subprocess.TimeoutExpired) as exc:  # noqa: BLE001
         telemetry.capture_exception(exc)
         print_info_debug(
             "[bloodhound-ce] container log-tail probe exception "
@@ -447,7 +447,7 @@ def _container_logs_show_neo4j_auth_rate_limit(
             capture_output=True,
             timeout=30,
         )
-    except Exception as exc:  # noqa: BLE001
+    except (OSError, subprocess.TimeoutExpired) as exc:  # noqa: BLE001
         telemetry.capture_exception(exc)
         print_info_debug(
             "[bloodhound-ce] auth-rate-limit log probe exception "
@@ -482,7 +482,7 @@ def _attempt_recover_from_auth_rate_limit(
             capture_output=True,
             timeout=60,
         )
-    except Exception as exc:  # noqa: BLE001
+    except (OSError, subprocess.TimeoutExpired) as exc:  # noqa: BLE001
         telemetry.capture_exception(exc)
         print_info_debug(
             "[bloodhound-ce] automatic recovery restart exception "
@@ -561,7 +561,7 @@ def _get_initial_password_from_container_logs(
                     capture_output=True,
                     timeout=30,
                 )
-            except Exception as exc:
+            except (OSError, subprocess.TimeoutExpired) as exc:
                 telemetry.capture_exception(exc)
                 print_info_debug(
                     "[bloodhound-ce] password log probe exception "
@@ -579,7 +579,7 @@ def _get_initial_password_from_container_logs(
                         capture_output=True,
                         timeout=30,
                     )
-                except Exception as exc:
+                except (OSError, subprocess.TimeoutExpired) as exc:
                     telemetry.capture_exception(exc)
                     print_info_debug(
                         "[bloodhound-ce] password log probe fallback exception "
@@ -644,7 +644,7 @@ def detect_existing_bloodhound_ce_state(
                 capture_output=True,
                 timeout=30,
             )
-        except Exception as exc:  # noqa: BLE001
+        except (OSError, subprocess.TimeoutExpired) as exc:  # noqa: BLE001
             telemetry.capture_exception(exc)
             print_info_debug(
                 "[bloodhound-ce] existing-state detector logs exception "

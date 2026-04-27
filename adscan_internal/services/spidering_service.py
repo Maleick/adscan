@@ -1,19 +1,8 @@
-"""Spidering service for manspider-based SMB share content discovery.
-
-This module encapsulates the logic for:
-
-- Executing manspider for password-oriented spidering on SMB shares.
-- Normalizing its output into a log file.
-- Delegating credential extraction to :class:`CredSweeperService`.
-
-The goal is to progressively migrate spidering responsibilities out of the
-``PentestShell`` monolith in ``adscan.py`` while keeping the CLI responsible
-for user interaction (confirmation prompts, password spraying decisions, etc.).
-"""
+"""Spidering service for manspider-based SMB share content discovery."""
 
 from __future__ import annotations
 
-from typing import Callable, Dict, List, Optional
+from typing import Dict, List, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 import logging
@@ -71,7 +60,8 @@ from adscan_internal import telemetry
 logger = logging.getLogger(__name__)
 
 
-CommandExecutor = Callable[..., subprocess.CompletedProcess[str] | None]
+from adscan_internal.types import FlexibleCommandExecutor as CommandExecutor
+
 HandleFoundCredentialsCallback = Callable[
     [dict, str, list[str] | None, list[str] | None, str | None, str | None], None
 ]

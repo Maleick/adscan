@@ -63,3 +63,12 @@ class CvssElevationRule:
     condition: str
     elevated_score: float
     reason: str
+
+
+__all__ = [
+    "CvssContext",
+    "CvssElevationRule",
+    "CONDITION_TIER_ZERO",
+    "CONDITION_DC_TARGETS",
+    "CONDITION_EXPLOITATION",
+]

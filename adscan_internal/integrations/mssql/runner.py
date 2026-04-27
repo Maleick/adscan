@@ -1,8 +1,4 @@
-"""MSSQL runner for NetExec command execution.
-
-This module provides a unified interface for executing MSSQL commands
-via NetExec with automatic error handling and output parsing.
-"""
+"""MSSQL runner for NetExec command execution."""
 
 from __future__ import annotations
 
