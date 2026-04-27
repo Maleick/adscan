@@ -682,6 +682,7 @@ def _parse_memavailable_bytes(meminfo_text: str) -> int | None:
 
 def _get_free_memory_bytes() -> int:
     """Return available system memory in bytes (best effort)."""
+    # Linux: read from /proc/meminfo
     meminfo_path = Path("/proc/meminfo")
     try:
         if meminfo_path.is_file():
@@ -693,12 +694,47 @@ def _get_free_memory_bytes() -> int:
     except OSError:
         pass
 
+    # Linux fallback: sysconf
     try:
         page_size = os.sysconf("SC_PAGE_SIZE")
         avail_pages = os.sysconf("SC_AVPHYS_PAGES")
         return int(page_size * avail_pages)
     except (OSError, ValueError, AttributeError):
-        return 0
+        pass
+
+    # macOS: use vm_stat command
+    try:
+        result = subprocess.run(
+            ["vm_stat"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if result.returncode == 0:
+            # Parse vm_stat output to calculate free memory
+            # vm_stat shows pages, each page is typically 4096 bytes
+            page_size = 4096
+            free_pages = 0
+            for line in result.stdout.splitlines():
+                if "Pages free:" in line:
+                    # Format: "Pages free:                      12345."
+                    parts = line.split(":")
+                    if len(parts) == 2:
+                        free_pages = int(parts[1].strip().rstrip("."))
+                        break
+            if free_pages > 0:
+                return int(free_pages * page_size)
+    except (OSError, ValueError, subprocess.TimeoutExpired):
+        pass
+
+    # Final fallback: try psutil if available
+    try:
+        import psutil
+        return psutil.virtual_memory().available
+    except (ImportError, AttributeError):
+        pass
+
+    return 0
 
 
 def _log_install_resource_status(path: Path) -> tuple[float, float]:
