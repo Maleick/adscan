@@ -46,8 +46,17 @@ _DOCKER_PERMISSION_WARNING_SHOWN = False
 
 
 def _get_host_platform() -> str | None:
-    """Return the Docker platform string for the host architecture."""
+    """Return the Docker platform string for the host architecture.
+    
+    Note: Currently returns None on macOS because Docker Desktop handles
+    architecture translation via QEMU. Only enforce platform on Linux
+    where native images are expected.
+    """
     import platform
+    if platform.system().lower() == "darwin":
+        # macOS Docker Desktop handles amd64 emulation on arm64 via QEMU
+        # Return None to let Docker auto-select the available image
+        return None
     arch = platform.machine().lower()
     if arch in ("arm64", "aarch64"):
         return "linux/arm64"
